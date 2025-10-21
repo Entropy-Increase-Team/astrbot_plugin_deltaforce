@@ -12,7 +12,7 @@ from .df_api import DeltaForceAPI
     "delta_force_plugin",
     "EntropyIncrease",
     "三角洲行动 AstrBot 插件",
-    "v0.0.1",
+    "v0.0.2",
     "https://github.com/Entropy-Increase-Team/astrbot_plugin_deltaforce",
 )
 class DeltaForce(Star):
@@ -65,22 +65,26 @@ class DeltaForce(Star):
             time.sleep(1)
             result_sig = await self.api.login_qq_get_status(frameworkToken)
             code = result_sig.get("code",-3)
-            if code == 1 or code == 2:
+            status = result_sig.get("status","expired")
+            if status == "pending" or status == "scanned":
                 continue
-            elif code == -2:
+            elif status == "expired":
                 yield self.chain_reply(event, f"二维码已过期，请重新获取！")
                 return
-            elif code == -3:
+            elif code == -3 or status == "rejected":
                 yield self.chain_reply(event, f"登录被拒绝，请尝试双机扫码或重试！")
                 return
-            elif code == 3: # 登陆成功
-                platformid = result_sig.get("qq","")
+            elif status == "done":
                 frameworkToken = result_sig.get("frameworkToken","")
-                if not platformid or not frameworkToken:
+                if not frameworkToken:
                     yield self.chain_reply(event, f"获取登录信息失败，请重试！")
                     return
                 break
-        yield self.chain_reply(event, f"欸我操太讷了登陆成功了！")
+        result_bind = await self.api.user_bind(platformId=event.get_sender_id(), frameworkToken=frameworkToken)
+        if not self.is_success(result_bind):
+            yield self.chain_reply(event, f"绑定账号失败，错误代码：{result_bind.get('msg', '未知错误')}")
+            return
+        yield self.chain_reply(event, f"登录绑定成功！")
         return
 
     @deltaforce_cmd.command("微信登录")
@@ -100,22 +104,27 @@ class DeltaForce(Star):
             time.sleep(1)
             result_sig = await self.api.login_wechat_get_status(frameworkToken)
             code = result_sig.get("code",-3)
-            if code == 1 or code == 2:
+            status = result_sig.get("status","expired")
+            if status == "pending" or status == "scanned":
                 continue
-            elif code == -2:
+            elif status == "expired":
                 yield self.chain_reply(event, f"二维码已过期，请重新获取！")
                 return
-            elif code == -3:
+            elif code == -3 or status == "rejected":
                 yield self.chain_reply(event, f"登录被拒绝，请尝试双机扫码或重试！")
                 return
-            elif code == 3: # 登陆成功
-                platformid = result_sig.get("qq","")
+            elif status == "done":
+                print(result_sig)
                 frameworkToken = result_sig.get("frameworkToken","")
-                if not platformid or not frameworkToken:
+                if not frameworkToken:
                     yield self.chain_reply(event, f"获取登录信息失败，请重试！")
                     return
                 break
-        yield self.chain_reply(event, f"欸我操太讷了登陆成功了！")
+        result_bind = await self.api.user_bind(platformId=event.get_sender_id(), frameworkToken=frameworkToken)
+        if not self.is_success(result_bind):
+            yield self.chain_reply(event, f"绑定账号失败，错误代码：{result_bind.get('msg', '未知错误')}")
+            return
+        yield self.chain_reply(event, f"登录绑定成功！")
         return
 
 

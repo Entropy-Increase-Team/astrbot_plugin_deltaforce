@@ -30,24 +30,22 @@ class DeltaForceAPI():
 
     async def user_bind(self, platformId:str, frameworkToken:str):
         return await self.req_post(
-            self,
             url = "/user/bind",
             data = {
-                "platformId": platformId,
+                "platformID": platformId,
                 "frameworkToken": frameworkToken,
-                "clientId": self.clientid,
+                "clientID": self.clientid,
                 "clientType": "AstrBot"
             }
         )
 
     async def user_unbind(self, platformId:str, frameworkToken:str):
         return await self.req_post(
-            self,
             url = "/user/unbind",
             data = {
-                "platformId": platformId,
+                "platformID": platformId,
                 "frameworkToken": frameworkToken,
-                "clientId": self.clientid,
+                "clientID": self.clientid,
                 "clientType": "AstrBot"
             }
         )
