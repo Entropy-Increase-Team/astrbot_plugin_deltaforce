@@ -50,6 +50,16 @@ class DeltaForceAPI():
             }
         )
 
+    async def user_acc_list(self, platformId:str):
+        return await self.req_get(
+            url = "/user/list",
+            params = {
+                "platformID": platformId,
+                "clientID": self.clientid,
+                "clientType": "AstrBot"
+            }
+        )
+
     async def login_qq_get_qrcode(self):
         return await self.req_get(url="/login/qq/qr")
     

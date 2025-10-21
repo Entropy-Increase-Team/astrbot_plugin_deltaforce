@@ -6,7 +6,7 @@ from astrbot.api import AstrBotConfig
 import time
 
 from .df_api import DeltaForceAPI
-
+from .df_sqlite import DeltaForceSQLiteManager
 
 @register(
     "delta_force_plugin",
@@ -22,9 +22,18 @@ class DeltaForce(Star):
         self.token = config.get("token", "")
         self.clientid = config.get("clientid", "")
         self.api = DeltaForceAPI(self.token, self.clientid)
+        self.db_manager = DeltaForceSQLiteManager()
 
     async def initialize(self):
         """可选择实现异步的插件初始化方法，当实例化该插件类之后会自动调用该方法。"""
+        try:
+            success = await self.db_manager.initialize_table()
+            if success:
+                logger.info("三角洲插件数据库初始化完成")
+            else:
+                logger.error("三角洲插件数据库初始化失败")
+        except Exception as e:
+            logger.error(f"插件初始化失败: {e}")
     
     def is_success(self, response: dict) -> bool:
         """判断接口请求是否成功的辅助方法"""
@@ -65,23 +74,23 @@ class DeltaForce(Star):
             time.sleep(1)
             result_sig = await self.api.login_qq_get_status(frameworkToken)
             code = result_sig.get("code",-3)
-            status = result_sig.get("status","expired")
-            if status == "pending" or status == "scanned":
+            if code == 1 or code == 2:
                 continue
-            elif status == "expired":
+            elif code == -2:
                 yield self.chain_reply(event, f"二维码已过期，请重新获取！")
                 return
-            elif code == -3 or status == "rejected":
+            elif code == -3:
                 yield self.chain_reply(event, f"登录被拒绝，请尝试双机扫码或重试！")
                 return
-            elif status == "done":
+            elif code == 0:
                 frameworkToken = result_sig.get("frameworkToken","")
                 if not frameworkToken:
                     yield self.chain_reply(event, f"获取登录信息失败，请重试！")
                     return
                 break
         result_bind = await self.api.user_bind(platformId=event.get_sender_id(), frameworkToken=frameworkToken)
-        if not self.is_success(result_bind):
+        result_db_bind = await self.db_manager.upsert_user(user=event.get_sender_id(), selection=1, token=frameworkToken)
+        if not self.is_success(result_bind) or not result_db_bind:
             yield self.chain_reply(event, f"绑定账号失败，错误代码：{result_bind.get('msg', '未知错误')}")
             return
         yield self.chain_reply(event, f"登录绑定成功！")
@@ -104,29 +113,77 @@ class DeltaForce(Star):
             time.sleep(1)
             result_sig = await self.api.login_wechat_get_status(frameworkToken)
             code = result_sig.get("code",-3)
-            status = result_sig.get("status","expired")
-            if status == "pending" or status == "scanned":
+            if code == 1 or code == 2:
                 continue
-            elif status == "expired":
+            elif code == -2:
                 yield self.chain_reply(event, f"二维码已过期，请重新获取！")
                 return
-            elif code == -3 or status == "rejected":
+            elif code == -3:
                 yield self.chain_reply(event, f"登录被拒绝，请尝试双机扫码或重试！")
                 return
-            elif status == "done":
-                print(result_sig)
+            elif code == 0:
                 frameworkToken = result_sig.get("frameworkToken","")
                 if not frameworkToken:
                     yield self.chain_reply(event, f"获取登录信息失败，请重试！")
                     return
                 break
         result_bind = await self.api.user_bind(platformId=event.get_sender_id(), frameworkToken=frameworkToken)
-        if not self.is_success(result_bind):
+        result_db_bind = await self.db_manager.upsert_user(user=event.get_sender_id(), selection=1, token=frameworkToken)
+        if not self.is_success(result_bind) or not result_db_bind:
             yield self.chain_reply(event, f"绑定账号失败，错误代码：{result_bind.get('msg', '未知错误')}")
             return
         yield self.chain_reply(event, f"登录绑定成功！")
         return
 
+    @deltaforce_cmd.command("账号切换", alias={"账号管理"})
+    async def switch_account(self, event: AstrMessageEvent):
+        """
+        三角洲 账号切换
+        """
+        result_list = await self.api.user_acc_list(platformId=event.get_sender_id())
+        if not self.is_success(result_list):
+            yield self.chain_reply(event, f"获取账号列表失败，错误代码：{result_list.get('msg', '未知错误')}")
+            return
+        print(result_list)
+        accounts = result_list.get("data", [])
+    
+        if not accounts:
+            yield self.chain_reply(event, "您尚未绑定任何账号，请先使用登录命令绑定账号")
+            return
+
+        output_lines = [f"【{event.get_sender_name()}】绑定的账号列表：", "---QQ & 微信---"]
+
+        for i, account in enumerate(accounts, 1):
+            token_type = account.get("tokenType", "").upper()
+            qq_number = account.get("qqNumber", "")
+            open_id = account.get("openId", "")
+            framework_token = account.get("frameworkToken", "")
+            is_valid = account.get("isValid", False)
+
+            if token_type == "QQ" and qq_number:
+                masked_id = f"{qq_number[:4]}****"
+            elif open_id:
+                masked_id = f"{open_id[:4]}****"
+            else:
+                masked_id = "未知"
+            
+            masked_token = f"{framework_token[:4]}****{framework_token[-4:]}" if framework_token else "未知"
+            selection, _ = await self.db_manager.get_user(event.get_sender_id())
+            if _ and selection == i:
+                status_icon = "✅"
+            else:
+                status_icon = "❌"
+        
+            output_lines.append(f"{i}. {status_icon}【{token_type}】({masked_id}) {masked_token} {'【有效】' if is_valid else '【无效】'}")
+    
+        output_lines.extend([
+            "",
+            "可通过 #三角洲 解绑 <序号> 来解绑账号。",
+            "可通过 #三角洲 删除 <序号> 来删除QQ/微信登录数据。", 
+            "使用 #三角洲 账号切换 <序号> 可切换当前激活账号。"
+        ])
+    
+        yield self.chain_reply(event, "\n".join(output_lines))
 
     async def terminate(self):
         """可选择实现异步的插件销毁方法，当插件被卸载/停用时会调用。"""
