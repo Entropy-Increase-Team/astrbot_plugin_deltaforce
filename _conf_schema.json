@@ -1,0 +1,14 @@
+{
+  "token": {
+    "description": "API Token",
+    "type": "string",
+    "hint": "机器人后端API Token (在API管理获取)",
+    "obvious_hint": true
+  },
+  "clientid": {
+    "description": "后端用户ID",
+    "type": "string",
+    "hint": "机器人后端用户ID (在个人中心获取)",
+    "obvious_hint": true
+  }
+}
