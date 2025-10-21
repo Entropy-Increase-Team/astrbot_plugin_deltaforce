@@ -61,6 +61,21 @@ class DeltaForceAPI():
             }
         )
 
+
+    async def login_qqck_(self, cookie: str):
+        return await self.req_post(
+            url="/login/qq/ck",
+            data = {"cookie": cookie}
+        )
+    
+    async def login_qqck_get_status(self, frameworkToken: str):
+        return await self.req_get(
+            url="/login/qq/status", 
+            params = {
+                "frameworkToken": frameworkToken
+            }
+        )
+
     async def login_qq_get_qrcode(self):
         return await self.req_get(url="/login/qq/qr")
     
@@ -102,7 +117,7 @@ class DeltaForceAPI():
     async def login_qqsafe_qrcode(self):
         return await self.req_get(url="/login/qqsafe/qr")
     
-    async def login_wechat_get_status(self, frameworkToken: str):
+    async def login_qqsafe_get_status(self, frameworkToken: str):
         return await self.req_get(
             url="/login/qqsafe/status", 
             params = {
@@ -116,6 +131,18 @@ class DeltaForceAPI():
     async def login_wegame_get_status(self, frameworkToken: str):
         return await self.req_get(
             url="/login/wegame/status", 
+            params = {
+                "frameworkToken": frameworkToken
+            }
+        )
+    ################################################################
+
+    async def get_daily_keyword(self):
+        return await self.req_get(url="/df/tools/dailykeyword")
+
+    async def get_ban_history(self, frameworkToken: str):
+        return await self.req_get(
+            url="/login/qqsafe/ban",
             params = {
                 "frameworkToken": frameworkToken
             }

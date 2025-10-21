@@ -56,6 +56,50 @@ class DeltaForce(Star):
         """
         pass
 
+    @deltaforce_cmd.command("CK登录", alias={"Cookie登录","qqck登录","ck登录"})
+    async def login_by_qq_ck(self, event: AstrMessageEvent, cookie: str = None):
+        """
+        三角洲 QQ 登录
+        """
+        if not cookie:
+            yield self.chain_reply(event, """三角洲ck登陆教程：
+1. 准备via浏览器(或其他类似浏览器)，在浏览器中打开 https://pvp.qq.com/cp/a20161115tyf/page1.shtml
+2. 在网页中进行QQ登陆
+3. 点击左上角的网页名左侧的盾图标
+4. 点击查看cookies，然后复制全部内容
+5. 返回QQ，私聊机器人，发送 /三角洲 ck登陆 刚刚复制的cookies
+6. 成功登陆""")
+            return
+        result_sig = await self.api.login_qqck_(cookie)
+        if not self.is_success(result_sig):
+            yield self.chain_reply(event, f"ck登录失败，错误代码：{result_sig.get('msg', '未知错误')}")
+            return
+        frameworkToken = result_sig.get("frameworkToken","")
+        while True:
+            time.sleep(1)
+            result_sig = await self.api.login_qqck_get_status(frameworkToken)
+            code = result_sig.get("code",-2)
+            if code == -2:
+                yield self.chain_reply(event, f"ck已过期，请重新获取！")
+                return
+            elif code == 0:
+                frameworkToken = result_sig.get("frameworkToken","")
+                if not frameworkToken:
+                    yield self.chain_reply(event, f"获取登录信息失败，请重试！")
+                    return
+                break
+        result_list = await self.api.user_acc_list(platformId=event.get_sender_id())
+        if not self.is_success(result_list):
+            yield self.chain_reply(event, f"获取账号列表失败，错误代码：{result_list.get('msg', '未知错误')}")
+            return
+        result_bind = await self.api.user_bind(platformId=event.get_sender_id(), frameworkToken=frameworkToken)
+        result_db_bind = await self.db_manager.upsert_user(user=event.get_sender_id(), selection=len(result_list.get("data", []))+1, token=frameworkToken)
+        if not self.is_success(result_bind) or not result_db_bind:
+            yield self.chain_reply(event, f"绑定账号失败，错误代码：{result_bind.get('msg', '未知错误')}")
+            return
+        yield self.chain_reply(event, f"登录绑定成功！")
+        return
+
     @deltaforce_cmd.command("QQ登录", alias={"登录"})
     async def login_by_qq(self, event: AstrMessageEvent):
         """
@@ -144,7 +188,7 @@ class DeltaForce(Star):
         return
 
     @deltaforce_cmd.command("安全中心登录")
-    async def login_by_wechat(self, event: AstrMessageEvent):
+    async def login_by_qqsafe(self, event: AstrMessageEvent):
         """
         三角洲 安全中心 登录
         """
@@ -154,8 +198,9 @@ class DeltaForce(Star):
             return
         frameworkToken = result_sig.get("frameworkToken","")
         image = result_sig.get("qr_image","")
+        image_base64 = image.split(",")[1] if "," in image else image
 
-        yield self.chain_reply(event, f"获取二维码成功，请登录！", [Comp.Image.fromURL(image)])
+        yield self.chain_reply(event, f"获取二维码成功，请登录！", [Comp.Image.fromBase64(image_base64)])
         while True:
             time.sleep(1)
             result_sig = await self.api.login_qqsafe_get_status(frameworkToken)
@@ -194,8 +239,9 @@ class DeltaForce(Star):
             return
         frameworkToken = result_sig.get("frameworkToken","")
         image = result_sig.get("qr_image","")
+        image_base64 = image.split(",")[1] if "," in image else image
 
-        yield self.chain_reply(event, f"获取二维码成功，请登录！", [Comp.Image.fromURL(image)])
+        yield self.chain_reply(event, f"获取二维码成功，请登录！", [Comp.Image.fromBase64(image_base64)])
         while True:
             time.sleep(1)
             result_sig = await self.api.login_qqsafe_get_status(frameworkToken)
@@ -440,6 +486,137 @@ class DeltaForce(Star):
             return
         yield self.chain_reply(event, "切换账号成功")
         return
+
+    @deltaforce_cmd.command("每日密码", alias={"今日密码"})
+    async def get_daily_keyword(self, event: AstrMessageEvent):
+        """
+        三角洲 每日密码
+        """
+        result_sig = await self.api.get_daily_keyword()
+        if not result_sig.get("success", False):
+            error_msg = result_sig.get("message", "未知错误")
+            yield self.chain_reply(event, f"获取每日密码失败：{error_msg}")
+            return
+        data = result_sig.get("data", {})
+        maps_list = data.get("list", [])
+        if not maps_list:
+            yield self.chain_reply(event, "今日暂无密码信息")
+            return
+        output_lines = ["🗝️【每日密码】🗝️"]
+        for map_info in maps_list:
+            map_name = map_info.get("mapName", "未知地图")
+            secret = map_info.get("secret", "未知")
+            if secret and secret.isdigit():
+                secret = secret.zfill(4)
+            output_lines.append(f"📍【{map_name}】: {secret}")
+        request_info = data.get("requestInfo", {})
+        timestamp = request_info.get("timestamp", "")
+        if timestamp:
+            try:
+                from datetime import datetime
+                dt = datetime.fromisoformat(timestamp.replace('Z', '+00:00'))
+                time_str = dt.strftime("%m-%d %H:%M")
+                output_lines.append(f"\n⏰ 更新时间: {time_str}")
+            except:
+                pass
+        yield self.chain_reply(event, "\n".join(output_lines))
+
+    @deltaforce_cmd.command("违规历史", alias={"封禁历史"})
+    async def get_ban_history(self, event: AstrMessageEvent):
+        """
+        三角洲 违规历史
+        """
+        result_list = await self.api.user_acc_list(platformId=event.get_sender_id())
+        if not self.is_success(result_list):
+            yield self.chain_reply(event, f"获取账号列表失败，错误代码：{result_list.get('msg', '未知错误')}")
+            return
+        accounts = result_list.get("data", [])
+        if not accounts:
+            yield self.chain_reply(event, "您尚未绑定任何账号，请先使用登录命令绑定账号")
+            return
+        user_data = await self.db_manager.get_user(event.get_sender_id())
+        if not user_data:
+            yield self.chain_reply(event, "您尚未选择激活账号，请先使用账号切换命令选择账号")
+            return
+        current_selection, _ = user_data
+        if current_selection <= len(accounts):
+            current_account = accounts[current_selection - 1]
+            if current_account.get("tokenType", "").lower() != "qqsafe":
+                yield self.chain_reply(event, "当前激活账号不是QQ安全中心账号\n请先使用 /三角洲 账号切换 命令切换到QQ安全中心账号")
+                return
+        else:
+            yield self.chain_reply(event, "当前选择的账号序号无效，请重新选择账号")
+            return
+        framework_token = current_account.get("frameworkToken")
+        if not framework_token:
+            yield self.chain_reply(event, "当前QQ安全中心账号token无效")
+            return
+        if not current_account.get("isValid", False):
+            yield self.chain_reply(event, "当前QQ安全中心账号已失效，请重新绑定")
+            return
+        result_ban = await self.api.get_ban_history(frameworkToken=framework_token)
+        if not self.is_success(result_ban):
+            yield self.chain_reply(event, f"获取违规历史失败，错误代码：{result_ban.get('msg', '未知错误')}")
+            return
+        if not self.is_success(result_ban):
+            yield self.chain_reply(event, f"获取违规历史失败，错误代码：{result_ban.get('msg', '未知错误')}")
+            return
+        ban_data = result_ban.get("data", [])
+        if not ban_data:
+            yield self.chain_reply(event, "🎉 恭喜！暂无违规记录")
+            return
+        nodes = []
+        nodes.append(Comp.Plain("【违规历史记录】\n\n"))
+        for i, ban_record in enumerate(ban_data, 1):
+            start_time = self._format_timestamp(ban_record.get("start_stmp", 0))
+            cheat_time = self._format_timestamp(ban_record.get("cheat_date", 0))
+            duration = self._format_duration(ban_record.get("duration", 0))
+            content_lines = [
+                f"🚫 第 {i} 条违规记录",
+                f"📱 游戏: {ban_record.get('game_name', '未知游戏')}",
+                f"📝 类型: {ban_record.get('type', '未知类型')}",
+                f"❓ 原因: {ban_record.get('reason', '未知原因')}",
+                f"📋 描述: {ban_record.get('strategy_desc', '无描述')}",
+                f"⏰ 开始时间: {start_time}",
+                f"🕒 违规时间: {cheat_time}" if cheat_time != "未知时间" else "",
+                f"⏱️ 持续时间: {duration}",
+                f"🎮 游戏ID: {ban_record.get('game_id', '未知')}",
+                f"🌐 区域: {ban_record.get('zone', '全区')}",
+                "─" * 20,
+                "\n"
+            ]
+            content_lines = [line for line in content_lines if line]
+            nodes.append(Comp.Plain("\n".join(content_lines)))
+        yield event.chain_result([Comp.Node(
+                uin=str(event.get_sender_id()),
+                name=event.get_sender_name(),
+                content=nodes
+            )])
+
+    def _format_timestamp(self, timestamp: int) -> str:
+        """格式化时间戳"""
+        if timestamp == 0 or timestamp is None:
+            return "未知时间"
+        try:
+            return time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(timestamp))
+        except:
+            return "时间格式错误"
+
+    def _format_duration(self, duration: int) -> str:
+        """格式化持续时间"""
+        try:
+            if duration < 60:
+                return f"{duration}秒"
+            elif duration < 3600:
+                return f"{duration // 60}分钟"
+            elif duration < 86400:
+                return f"{duration // 3600}小时"
+            elif duration < 31536000:
+                return f"{duration // 86400}天"
+            else:
+                return f"{duration // 31536000}年"
+        except:
+            return "未知时长"
 
     async def terminate(self):
         """可选择实现异步的插件销毁方法，当插件被卸载/停用时会调用。"""
