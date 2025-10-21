@@ -193,7 +193,7 @@ class DeltaForce(Star):
                 masked_token = f"{framework_token[:4]}****{framework_token[-4:]}" if framework_token else "未知"
                 
                 is_current = (current_selection == i)
-                status_icon = "✅" if is_current else "🔹"
+                status_icon = "✅" if is_current else "❌"
                 
                 validity_status = "【有效】" if is_valid else "【失效】"
                 output_lines.append(f"{i}. {status_icon}【{token_type}】({masked_id}) {masked_token} {validity_status}")
@@ -221,7 +221,7 @@ class DeltaForce(Star):
                 masked_token = f"{framework_token[:4]}****{framework_token[-4:]}" if framework_token else "未知"
                 
                 is_current = (current_selection == i)
-                status_icon = "✅" if is_current else "🔹"
+                status_icon = "✅" if is_current else "❌"
                 
                 validity_status = "【有效】" if is_valid else "【失效】"
                 output_lines.append(f"{i}. {status_icon}【{display_type}】({masked_id}) {masked_token} {validity_status}")
@@ -239,7 +239,7 @@ class DeltaForce(Star):
                 masked_token = f"{framework_token[:4]}****{framework_token[-4:]}" if framework_token else "未知"
                 
                 is_current = (current_selection == i)
-                status_icon = "✅" if is_current else "🔹"
+                status_icon = "✅" if is_current else "❌"
                 
                 validity_status = "【有效】" if is_valid else "【失效】"
                 output_lines.append(f"{i}. {status_icon}【{token_type}】({masked_id}) {masked_token} {validity_status}")
@@ -255,7 +255,7 @@ class DeltaForce(Star):
                 masked_token = f"{framework_token[:4]}****{framework_token[-4:]}" if framework_token else "未知"
                 
                 is_current = (current_selection == i)
-                status_icon = "✅" if is_current else "🔹"
+                status_icon = "✅" if is_current else "❌"
                 
                 validity_status = "【有效】" if is_valid else "【失效】"
                 output_lines.append(f"{i}. {status_icon}【{token_type}】 {masked_token} {validity_status}")
