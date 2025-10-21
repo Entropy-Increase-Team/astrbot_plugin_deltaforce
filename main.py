@@ -144,7 +144,6 @@ class DeltaForce(Star):
         if not self.is_success(result_list):
             yield self.chain_reply(event, f"获取账号列表失败，错误代码：{result_list.get('msg', '未知错误')}")
             return
-        print(result_list)
         accounts = result_list.get("data", [])
     
         if not accounts:
@@ -160,7 +159,7 @@ class DeltaForce(Star):
             framework_token = account.get("frameworkToken", "")
             is_valid = account.get("isValid", False)
 
-            if token_type == "QQ" and qq_number:
+            if token_type == "qq" and qq_number:
                 masked_id = f"{qq_number[:4]}****"
             elif open_id:
                 masked_id = f"{open_id[:4]}****"
@@ -175,15 +174,72 @@ class DeltaForce(Star):
                 status_icon = "❌"
         
             output_lines.append(f"{i}. {status_icon}【{token_type}】({masked_id}) {masked_token} {'【有效】' if is_valid else '【无效】'}")
-    
+
         output_lines.extend([
             "",
-            "可通过 #三角洲 解绑 <序号> 来解绑账号。",
-            "可通过 #三角洲 删除 <序号> 来删除QQ/微信登录数据。", 
-            "使用 #三角洲 账号切换 <序号> 可切换当前激活账号。"
+            "可通过 /三角洲 解绑 <序号> 来解绑账号登录数据。",
+            "可通过 /三角洲 删除 <序号> 来删除QQ/微信登录数据。",
+            "使用 /三角洲 账号切换 <序号> 可切换当前激活账号。"
         ])
-    
         yield self.chain_reply(event, "\n".join(output_lines))
+    
+    @deltaforce_cmd.command("解绑", alias={"账号解绑"})
+    async def unbind_account(self, event: AstrMessageEvent, value: str):
+        """
+        三角洲 账号解绑
+        """
+        value = int(value)
+        result_list = await self.api.user_acc_list(platformId=event.get_sender_id())
+        if not self.is_success(result_list):
+            yield self.chain_reply(event, f"获取账号列表失败，错误代码：{result_list.get('msg', '未知错误')}")
+            return
+        accounts = result_list.get("data", [])
+        if not accounts:
+            yield self.chain_reply(event, "您尚未绑定任何账号，请先使用登录命令绑定账号")
+            return
+        if value is None or value < 1 or value > len(accounts):
+            yield self.chain_reply(event, "当前没有激活的账号，无法解绑，请先切换账号后再解绑")
+            return
+        frameworkToken = accounts[value - 1].get("frameworkToken","")
+        result_unbind = await self.api.user_unbind(platformId=event.get_sender_id(), frameworkToken=frameworkToken)
+        result_db_unbind = await self.db_manager.upsert_user(user=event.get_sender_id(), selection=0, token=None)
+        if not self.is_success(result_unbind) or not result_db_unbind:
+            yield self.chain_reply(event, f"解绑账号失败，错误代码：{result_unbind.get('msg', '未知错误')}")
+            return
+        yield self.chain_reply(event, "解绑账号成功")
+        return
+
+    @deltaforce_cmd.command("删除", alias={"账号删除"})
+    async def delete_account(self, event: AstrMessageEvent, value: str):
+        """
+        三角洲 账号删除 仅支持微信QQ
+        """
+        value = int(value)
+        result_list = await self.api.user_acc_list(platformId=event.get_sender_id())
+        if not self.is_success(result_list):
+            yield self.chain_reply(event, f"获取账号列表失败，错误代码：{result_list.get('msg', '未知错误')}")
+            return
+        accounts = result_list.get("data", [])
+        if not accounts:
+            yield self.chain_reply(event, "您尚未绑定任何账号，请先使用登录命令绑定账号")
+            return
+        if value is None or value < 1 or value > len(accounts):
+            yield self.chain_reply(event, "当前没有激活的账号，无法删除，请先切换账号后再删除")
+            return
+        frameworkToken = accounts[value - 1].get("frameworkToken","")
+        if accounts[value - 1].get("tokenType","") == "qq":
+            result_unbind = await self.api.login_qq_delete(frameworkToken=frameworkToken)
+        elif accounts[value - 1].get("tokenType","") == "wechat":
+            result_unbind = await self.api.login_wechat_delete(frameworkToken=frameworkToken)
+        else:
+            yield self.chain_reply(event, "仅支持删除QQ和微信登录数据，其他类型暂不支持！")
+            return
+        result_db_unbind = await self.db_manager.upsert_user(user=event.get_sender_id(), selection=0, token=None)
+        if not self.is_success(result_unbind) or not result_db_unbind:
+            yield self.chain_reply(event, f"删除账号失败，错误代码：{result_unbind.get('msg', '未知错误')}")
+            return
+        yield self.chain_reply(event, "删除账号登录数据成功")
+        return
 
     async def terminate(self):
         """可选择实现异步的插件销毁方法，当插件被卸载/停用时会调用。"""

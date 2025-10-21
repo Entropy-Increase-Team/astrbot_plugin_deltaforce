@@ -28,6 +28,7 @@ class DeltaForceAPI():
             ) as response:
                 return await response.json()
 
+    ################################################################
     async def user_bind(self, platformId:str, frameworkToken:str):
         return await self.req_post(
             url = "/user/bind",
@@ -64,10 +65,36 @@ class DeltaForceAPI():
         return await self.req_get(url="/login/qq/qr")
     
     async def login_qq_get_status(self, frameworkToken: str):
-        return await self.req_get(url="/login/qq/status", params={"frameworkToken": frameworkToken})
+        return await self.req_get(
+            url="/login/qq/status", 
+            params = {
+                "frameworkToken": frameworkToken
+            }
+        )
 
     async def login_wechat_get_qrcode(self):
         return await self.req_get(url="/login/wechat/qr")
 
     async def login_wechat_get_status(self, frameworkToken: str):
-        return await self.req_get(url="/login/wechat/status", params={"frameworkToken": frameworkToken})
+        return await self.req_get(
+            url="/login/wechat/status", 
+            params = {
+                "frameworkToken": frameworkToken
+            }
+        )
+
+    async def login_qq_delete(self, frameworkToken: str):
+        return await self.req_get(
+            url = "/login/qq/delete",
+            data = {
+                "frameworkToken": frameworkToken,
+            }
+        )
+    
+    async def login_wechat_delete(self, frameworkToken: str):
+        return await self.req_get(
+            url = "/login/wechat/delete",
+            data = {
+                "frameworkToken": frameworkToken,
+            }
+        )
