@@ -135,45 +135,130 @@ class DeltaForce(Star):
         yield self.chain_reply(event, f"登录绑定成功！")
         return
 
-    @deltaforce_cmd.command("账号切换", alias={"账号管理"})
+    @deltaforce_cmd.command("账号列表", alias={"账号管理"})
     async def switch_account(self, event: AstrMessageEvent):
         """
-        三角洲 账号切换
+        三角洲 账号列表
         """
         result_list = await self.api.user_acc_list(platformId=event.get_sender_id())
         if not self.is_success(result_list):
             yield self.chain_reply(event, f"获取账号列表失败，错误代码：{result_list.get('msg', '未知错误')}")
             return
         accounts = result_list.get("data", [])
-    
+
         if not accounts:
             yield self.chain_reply(event, "您尚未绑定任何账号，请先使用登录命令绑定账号")
             return
 
-        output_lines = [f"【{event.get_sender_name()}】绑定的账号列表：", "---QQ & 微信---"]
+        qq_wechat_accounts = []
+        qqsafe_accounts = []
+        wegame_accounts = []
+        unknown_accounts = []
 
-        for i, account in enumerate(accounts, 1):
-            token_type = account.get("tokenType", "").upper()
-            qq_number = account.get("qqNumber", "")
-            open_id = account.get("openId", "")
-            framework_token = account.get("frameworkToken", "")
-            is_valid = account.get("isValid", False)
-
-            if token_type == "qq" and qq_number:
-                masked_id = f"{qq_number[:4]}****"
-            elif open_id:
-                masked_id = f"{open_id[:4]}****"
-            else:
-                masked_id = "未知"
+        for account in accounts:
+            token_type = account.get("tokenType", "").lower()
             
-            masked_token = f"{framework_token[:4]}****{framework_token[-4:]}" if framework_token else "未知"
-            selection, _ = await self.db_manager.get_user(event.get_sender_id())
-            if _ and selection == i:
-                status_icon = "✅"
+            if token_type in ["qq", "wechat"]:
+                qq_wechat_accounts.append(account)
+            elif token_type == "qqsafe":
+                qqsafe_accounts.append(account)
+            elif token_type == "wegame":
+                wegame_accounts.append(account)
             else:
-                status_icon = "❌"
-        
-            output_lines.append(f"{i}. {status_icon}【{token_type}】({masked_id}) {masked_token} {'【有效】' if is_valid else '【无效】'}")
+                unknown_accounts.append(account)
+
+        output_lines = [f"【{event.get_sender_name()}】绑定的账号列表："]
+
+        current_selection = None
+        user_data = await self.db_manager.get_user(event.get_sender_id())
+        if user_data:
+            current_selection, _ = user_data
+
+        if qq_wechat_accounts:
+            output_lines.append("---QQ & 微信---")
+            for i, account in enumerate(qq_wechat_accounts, 1):
+                token_type = account.get("tokenType", "").upper()
+                qq_number = account.get("qqNumber", "")
+                open_id = account.get("openId", "")
+                framework_token = account.get("frameworkToken", "")
+                is_valid = account.get("isValid", False)
+
+                if token_type == "QQ" and qq_number:
+                    masked_id = f"{qq_number[:4]}****"
+                elif open_id:
+                    masked_id = f"{open_id[:4]}****"
+                else:
+                    masked_id = "未知"
+                
+                masked_token = f"{framework_token[:4]}****{framework_token[-4:]}" if framework_token else "未知"
+                
+                is_current = (current_selection == i)
+                status_icon = "✅" if is_current else "🔹"
+                
+                validity_status = "【有效】" if is_valid else "【失效】"
+                output_lines.append(f"{i}. {status_icon}【{token_type}】({masked_id}) {masked_token} {validity_status}")
+
+        if wegame_accounts:
+            output_lines.append("---Wegame---")
+            start_index = len(qq_wechat_accounts) + 1
+            for i, account in enumerate(wegame_accounts, start_index):
+                token_type = account.get("tokenType", "").upper()
+                qq_number = account.get("qqNumber", "")
+                tgp_id = account.get("tgpId", "")
+                login_type = account.get("loginType", "").upper()
+                framework_token = account.get("frameworkToken", "")
+                is_valid = account.get("isValid", False)
+
+                if qq_number:
+                    masked_id = f"{qq_number[:4]}****"
+                elif tgp_id:
+                    masked_id = f"{tgp_id[:4]}****"
+                else:
+                    masked_id = "未知"
+                
+                display_type = f"{token_type}({login_type})" if login_type else token_type
+                
+                masked_token = f"{framework_token[:4]}****{framework_token[-4:]}" if framework_token else "未知"
+                
+                is_current = (current_selection == i)
+                status_icon = "✅" if is_current else "🔹"
+                
+                validity_status = "【有效】" if is_valid else "【失效】"
+                output_lines.append(f"{i}. {status_icon}【{display_type}】({masked_id}) {masked_token} {validity_status}")
+
+        if qqsafe_accounts:
+            output_lines.append("---QQ安全中心---")
+            start_index = len(qq_wechat_accounts) + len(wegame_accounts) + 1
+            for i, account in enumerate(qqsafe_accounts, start_index):
+                token_type = account.get("tokenType", "").upper()
+                qq_number = account.get("qqNumber", "")
+                framework_token = account.get("frameworkToken", "")
+                is_valid = account.get("isValid", False)
+
+                masked_id = f"{qq_number[:4]}****" if qq_number else "未知"
+                masked_token = f"{framework_token[:4]}****{framework_token[-4:]}" if framework_token else "未知"
+                
+                is_current = (current_selection == i)
+                status_icon = "✅" if is_current else "🔹"
+                
+                validity_status = "【有效】" if is_valid else "【失效】"
+                output_lines.append(f"{i}. {status_icon}【{token_type}】({masked_id}) {masked_token} {validity_status}")
+
+        if unknown_accounts:
+            output_lines.append("---其他---")
+            start_index = len(qq_wechat_accounts) + len(wegame_accounts) + len(qqsafe_accounts) + 1
+            for i, account in enumerate(unknown_accounts, start_index):
+                token_type = account.get("tokenType", "").upper()
+                framework_token = account.get("frameworkToken", "")
+                is_valid = account.get("isValid", False)
+
+                masked_token = f"{framework_token[:4]}****{framework_token[-4:]}" if framework_token else "未知"
+                
+                is_current = (current_selection == i)
+                status_icon = "✅" if is_current else "🔹"
+                
+                validity_status = "【有效】" if is_valid else "【失效】"
+                output_lines.append(f"{i}. {status_icon}【{token_type}】 {masked_token} {validity_status}")
 
         output_lines.extend([
             "",
@@ -181,8 +266,9 @@ class DeltaForce(Star):
             "可通过 /三角洲 删除 <序号> 来删除QQ/微信登录数据。",
             "使用 /三角洲 账号切换 <序号> 可切换当前激活账号。"
         ])
+
         yield self.chain_reply(event, "\n".join(output_lines))
-    
+
     @deltaforce_cmd.command("解绑", alias={"账号解绑"})
     async def unbind_account(self, event: AstrMessageEvent, value: str):
         """
@@ -239,6 +325,31 @@ class DeltaForce(Star):
             yield self.chain_reply(event, f"删除账号失败，错误代码：{result_unbind.get('msg', '未知错误')}")
             return
         yield self.chain_reply(event, "删除账号登录数据成功")
+        return
+
+    @deltaforce_cmd.command("切换", alias={"账号切换"})
+    async def switch_account(self, event: AstrMessageEvent, value: str):
+        """
+        三角洲 账号切换
+        """
+        value = int(value)
+        result_list = await self.api.user_acc_list(platformId=event.get_sender_id())
+        if not self.is_success(result_list):
+            yield self.chain_reply(event, f"获取账号列表失败，错误代码：{result_list.get('msg', '未知错误')}")
+            return
+        accounts = result_list.get("data", [])
+        if not accounts:
+            yield self.chain_reply(event, "您尚未绑定任何账号，请先使用登录命令绑定账号")
+            return
+        if value is None or value < 1 or value > len(accounts):
+            yield self.chain_reply(event, "当前没有激活的账号，无法切换，请先绑定账号后再切换")
+            return
+        frameworkToken = accounts[value - 1].get("frameworkToken","")
+        result_db_switch = await self.db_manager.upsert_user(user=event.get_sender_id(), selection=value, token=frameworkToken)
+        if not result_db_switch:
+            yield self.chain_reply(event, f"切换账号失败，错误代码：")
+            return
+        yield self.chain_reply(event, "切换账号成功")
         return
 
     async def terminate(self):
