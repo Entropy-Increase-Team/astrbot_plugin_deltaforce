@@ -72,6 +72,14 @@ class DeltaForceAPI():
             }
         )
 
+    async def login_qq_delete(self, frameworkToken: str):
+        return await self.req_get(
+            url = "/login/qq/delete",
+            params = {
+                "frameworkToken": frameworkToken,
+            }
+        )
+
     async def login_wechat_get_qrcode(self):
         return await self.req_get(url="/login/wechat/qr")
 
@@ -83,18 +91,32 @@ class DeltaForceAPI():
             }
         )
 
-    async def login_qq_delete(self, frameworkToken: str):
+    async def login_wechat_delete(self, frameworkToken: str):
         return await self.req_get(
-            url = "/login/qq/delete",
-            data = {
+            url = "/login/wechat/delete",
+            params = {
                 "frameworkToken": frameworkToken,
             }
         )
     
-    async def login_wechat_delete(self, frameworkToken: str):
+    async def login_qqsafe_qrcode(self):
+        return await self.req_get(url="/login/qqsafe/qr")
+    
+    async def login_wechat_get_status(self, frameworkToken: str):
         return await self.req_get(
-            url = "/login/wechat/delete",
-            data = {
-                "frameworkToken": frameworkToken,
+            url="/login/qqsafe/status", 
+            params = {
+                "frameworkToken": frameworkToken
+            }
+        )
+
+    async def login_wegame_qrcode(self):
+        return await self.req_get(url="/login/wegame/qr")
+    
+    async def login_wegame_get_status(self, frameworkToken: str):
+        return await self.req_get(
+            url="/login/wegame/status", 
+            params = {
+                "frameworkToken": frameworkToken
             }
         )

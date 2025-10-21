@@ -88,8 +88,12 @@ class DeltaForce(Star):
                     yield self.chain_reply(event, f"获取登录信息失败，请重试！")
                     return
                 break
+        result_list = await self.api.user_acc_list(platformId=event.get_sender_id())
+        if not self.is_success(result_list):
+            yield self.chain_reply(event, f"获取账号列表失败，错误代码：{result_list.get('msg', '未知错误')}")
+            return
         result_bind = await self.api.user_bind(platformId=event.get_sender_id(), frameworkToken=frameworkToken)
-        result_db_bind = await self.db_manager.upsert_user(user=event.get_sender_id(), selection=1, token=frameworkToken)
+        result_db_bind = await self.db_manager.upsert_user(user=event.get_sender_id(), selection=len(result_list.get("data", []))+1, token=frameworkToken)
         if not self.is_success(result_bind) or not result_db_bind:
             yield self.chain_reply(event, f"绑定账号失败，错误代码：{result_bind.get('msg', '未知错误')}")
             return
@@ -127,8 +131,92 @@ class DeltaForce(Star):
                     yield self.chain_reply(event, f"获取登录信息失败，请重试！")
                     return
                 break
+        result_list = await self.api.user_acc_list(platformId=event.get_sender_id())
+        if not self.is_success(result_list):
+            yield self.chain_reply(event, f"获取账号列表失败，错误代码：{result_list.get('msg', '未知错误')}")
+            return
         result_bind = await self.api.user_bind(platformId=event.get_sender_id(), frameworkToken=frameworkToken)
-        result_db_bind = await self.db_manager.upsert_user(user=event.get_sender_id(), selection=1, token=frameworkToken)
+        result_db_bind = await self.db_manager.upsert_user(user=event.get_sender_id(), selection=len(result_list.get("data", []))+1, token=frameworkToken)
+        if not self.is_success(result_bind) or not result_db_bind:
+            yield self.chain_reply(event, f"绑定账号失败，错误代码：{result_bind.get('msg', '未知错误')}")
+            return
+        yield self.chain_reply(event, f"登录绑定成功！")
+        return
+
+    @deltaforce_cmd.command("安全中心登录")
+    async def login_by_wechat(self, event: AstrMessageEvent):
+        """
+        三角洲 安全中心 登录
+        """
+        result_sig = await self.api.login_qqsafe_qrcode()
+        if not self.is_success(result_sig):
+            yield self.chain_reply(event, f"获取二维码失败，错误代码：{result_sig.get('msg', '未知错误')}")
+            return
+        frameworkToken = result_sig.get("frameworkToken","")
+        image = result_sig.get("qr_image","")
+
+        yield self.chain_reply(event, f"获取二维码成功，请登录！", [Comp.Image.fromURL(image)])
+        while True:
+            time.sleep(1)
+            result_sig = await self.api.login_qqsafe_get_status(frameworkToken)
+            code = result_sig.get("code",-2)
+            if code == 1 or code == 2:
+                continue
+            elif code == -2:
+                yield self.chain_reply(event, f"二维码已过期，请重新获取！")
+                return
+            elif code == 0:
+                frameworkToken = result_sig.get("frameworkToken","")
+                if not frameworkToken:
+                    yield self.chain_reply(event, f"获取登录信息失败，请重试！")
+                    return
+                break
+        result_list = await self.api.user_acc_list(platformId=event.get_sender_id())
+        if not self.is_success(result_list):
+            yield self.chain_reply(event, f"获取账号列表失败，错误代码：{result_list.get('msg', '未知错误')}")
+            return
+        result_bind = await self.api.user_bind(platformId=event.get_sender_id(), frameworkToken=frameworkToken)
+        result_db_bind = await self.db_manager.upsert_user(user=event.get_sender_id(), selection=len(result_list.get("data", []))+1, token=frameworkToken)
+        if not self.is_success(result_bind) or not result_db_bind:
+            yield self.chain_reply(event, f"绑定账号失败，错误代码：{result_bind.get('msg', '未知错误')}")
+            return
+        yield self.chain_reply(event, f"登录绑定成功！")
+        return
+
+    @deltaforce_cmd.command("WeGame登录", alias={"WG登录"})
+    async def login_by_wegame(self, event: AstrMessageEvent):
+        """
+        三角洲 WeGame 登录
+        """
+        result_sig = await self.api.login_wegame_qrcode()
+        if not self.is_success(result_sig):
+            yield self.chain_reply(event, f"获取二维码失败，错误代码：{result_sig.get('msg', '未知错误')}")
+            return
+        frameworkToken = result_sig.get("frameworkToken","")
+        image = result_sig.get("qr_image","")
+
+        yield self.chain_reply(event, f"获取二维码成功，请登录！", [Comp.Image.fromURL(image)])
+        while True:
+            time.sleep(1)
+            result_sig = await self.api.login_qqsafe_get_status(frameworkToken)
+            code = result_sig.get("code",-2)
+            if code == 1 or code == 2:
+                continue
+            elif code == -2:
+                yield self.chain_reply(event, f"二维码已过期，请重新获取！")
+                return
+            elif code == 0:
+                frameworkToken = result_sig.get("frameworkToken","")
+                if not frameworkToken:
+                    yield self.chain_reply(event, f"获取登录信息失败，请重试！")
+                    return
+                break
+        result_list = await self.api.user_acc_list(platformId=event.get_sender_id())
+        if not self.is_success(result_list):
+            yield self.chain_reply(event, f"获取账号列表失败，错误代码：{result_list.get('msg', '未知错误')}")
+            return
+        result_bind = await self.api.user_bind(platformId=event.get_sender_id(), frameworkToken=frameworkToken)
+        result_db_bind = await self.db_manager.upsert_user(user=event.get_sender_id(), selection=len(result_list.get("data", []))+1, token=frameworkToken)
         if not self.is_success(result_bind) or not result_db_bind:
             yield self.chain_reply(event, f"绑定账号失败，错误代码：{result_bind.get('msg', '未知错误')}")
             return
@@ -136,16 +224,17 @@ class DeltaForce(Star):
         return
 
     @deltaforce_cmd.command("账号列表", alias={"账号管理"})
-    async def switch_account(self, event: AstrMessageEvent):
+    async def list_account(self, event: AstrMessageEvent):
         """
         三角洲 账号列表
         """
+        print("获取账号列表")
         result_list = await self.api.user_acc_list(platformId=event.get_sender_id())
         if not self.is_success(result_list):
             yield self.chain_reply(event, f"获取账号列表失败，错误代码：{result_list.get('msg', '未知错误')}")
             return
         accounts = result_list.get("data", [])
-
+        print(accounts)
         if not accounts:
             yield self.chain_reply(event, "您尚未绑定任何账号，请先使用登录命令绑定账号")
             return
@@ -288,7 +377,7 @@ class DeltaForce(Star):
             return
         frameworkToken = accounts[value - 1].get("frameworkToken","")
         result_unbind = await self.api.user_unbind(platformId=event.get_sender_id(), frameworkToken=frameworkToken)
-        result_db_unbind = await self.db_manager.upsert_user(user=event.get_sender_id(), selection=0, token=None)
+        result_db_unbind = await self.db_manager.upsert_user(user=event.get_sender_id(), selection=value-1, token=None)
         if not self.is_success(result_unbind) or not result_db_unbind:
             yield self.chain_reply(event, f"解绑账号失败，错误代码：{result_unbind.get('msg', '未知错误')}")
             return
@@ -320,7 +409,7 @@ class DeltaForce(Star):
         else:
             yield self.chain_reply(event, "仅支持删除QQ和微信登录数据，其他类型暂不支持！")
             return
-        result_db_unbind = await self.db_manager.upsert_user(user=event.get_sender_id(), selection=0, token=None)
+        result_db_unbind = await self.db_manager.upsert_user(user=event.get_sender_id(), selection=value-1, token=None)
         if not self.is_success(result_unbind) or not result_db_unbind:
             yield self.chain_reply(event, f"删除账号失败，错误代码：{result_unbind.get('msg', '未知错误')}")
             return
