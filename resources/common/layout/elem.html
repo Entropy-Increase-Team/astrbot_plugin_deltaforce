@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width">
+    <link rel="shortcut icon" href="#"/>
+    <link rel="preload" href="{{ _res_path }}fonts/p-med.ttf" as="font" type="font/ttf">
+    <link rel="stylesheet" type="text/css" href="{{ _res_path }}common/common.css"/>
+    <title>delta-force-plugin</title>
+    {% block css %}
+    {% endblock %}
+  </head>
+  <body class="elem-{{ element or elem or 'hydro' }} {{ displayMode or mode or 'default' }}-mode {{ bodyClass or '' }}" {{ sys.scale if sys else '' }}>
+    <div class="container elem-bg" id="container">
+      {% block main %}{% endblock %}
+      <div class="copyright">{{ copyright|safe if copyright else (sys.copyright|safe if sys and sys.copyright else '') }}</div>
+    </div>
+  </body>
+</html>

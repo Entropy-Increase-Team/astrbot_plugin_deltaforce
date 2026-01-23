@@ -1,0 +1,71 @@
+{% extends "common/common.html" %}
+{% block css %}
+<link rel="stylesheet" type="text/css" href="{{ _res_path }}Template/redRecordList/redRecordList.css"/>
+{% endblock %}
+{% block main %}
+<div class="container">
+    <!-- 头部区域 -->
+    <div class="header">
+        <div class="header-content">
+            <div class="header-left">
+                <img class="game-logo" src="{{ _res_path }}imgs/others/logo.png" alt="三角洲行动" />
+            </div>
+            <div class="header-right">
+                <div class="header-info">
+                    <span class="player-name">{{ userName }}</span>
+                    <span class="mode-name">大红排行榜</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="content">
+        <!-- 统计数据 -->
+        <div class="statistics-grid">
+            <div class="stat-card">
+                <div class="stat-label">收藏总价值</div>
+                <div class="stat-value highlight">{{ '{:,}'.format(totalCollectionValue) }}</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">大红总数</div>
+                <div class="stat-value">{{ '{:,}'.format(totalCount) }}</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">最高单品价值</div>
+                <div class="stat-value">{{ '{:,}'.format(maxPrice) }}</div>
+            </div>
+        </div>
+
+        <!-- 排行榜列表 -->
+        <div class="record-list">
+            {% if records and records|length > 0 %}
+                {% for item in records %}
+                <div class="record-card {% if loop.index <= 3 %}top-rank top-rank-{{ loop.index }}{% endif %}">
+                    <div class="rank-badge">{{ loop.index }}</div>
+                    <div class="item-image-section">
+                        <div class="item-img-wrapper">
+                            <img class="item-img" src="{{ item.objectImage }}" alt="{{ item.objectName }}" onerror="this.style.display='none';" />
+                        </div>
+                    </div>
+                    <div class="item-info-section">
+                        <div class="item-name">{{ item.objectName }}</div>
+                        <div class="item-count">数量: {{ item.count }}</div>
+                    </div>
+                    <div class="item-value-section">
+                        <div class="item-price">{{ '{:,}'.format(item.totalPrice) }}</div>
+                        <div class="item-unit-price">单价: {{ '{:,}'.format(item.price) }}</div>
+                    </div>
+                </div>
+                {% endfor %}
+            {% else %}
+                <div class="no-data">暂无大红排行数据</div>
+            {% endif %}
+        </div>
+    </div>
+    
+    <div class="template-footer">
+        <div class="copyright-text">由 DeltaForce-Plugin-Yunzai 强力驱动</div>
+    </div>
+</div>
+{% endblock %}
+{% block footer %}{% endblock %}

@@ -1,0 +1,88 @@
+{% extends "common/common.html" %}
+
+{% block css %}
+<link rel="stylesheet" type="text/css" href="{{ _res_path }}help/index.css"/>
+{% endblock %}
+
+{% block main %}
+<div class="container help-container">
+    <!-- 背景图片 -->
+    <img class="bg-image" src="{{ _res_path }}imgs/others/loading13.png" alt="" />
+    
+    <!-- 头部区域 -->
+    <div class="head-box">
+        <div class="title">{{ helpCfg.title | default('使用帮助', true) }}</div>
+        <div class="label">{{ helpCfg.subTitle | default('DeltaForce-Plugin', true) }}</div>
+    </div>
+
+    <!-- 帮助内容区域 -->
+    {% if twoColumnLayout %}
+    <!-- 两列布局 -->
+    <div class="help-content-wrapper">
+        <div class="help-column">
+            {% for group in leftGroups %}
+            <div class="cont-box">
+                <div class="help-group">{{ group.group }}</div>
+                {% if group.list and group.list|length > 0 %}
+                <div class="help-table">
+                    {% for help in group.list %}
+                    <div class="help-item">
+                        <span class="help-icon">{{ help.icon | default('📌', true) }}</span>
+                        <strong class="help-title">{{ help.title }}</strong>
+                        <span class="help-desc">{{ help.desc }}</span>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% endif %}
+            </div>
+            {% endfor %}
+        </div>
+        <div class="help-column">
+            {% for group in rightGroups %}
+            <div class="cont-box">
+                <div class="help-group">{{ group.group }}</div>
+                {% if group.list and group.list|length > 0 %}
+                <div class="help-table">
+                    {% for help in group.list %}
+                    <div class="help-item">
+                        <span class="help-icon">{{ help.icon | default('📌', true) }}</span>
+                        <strong class="help-title">{{ help.title }}</strong>
+                        <span class="help-desc">{{ help.desc }}</span>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% endif %}
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% else %}
+    <!-- 单列布局 -->
+    {% for group in helpGroups %}
+    <div class="cont-box">
+        <div class="help-group">{{ group.group }}</div>
+        {% if group.list and group.list|length > 0 %}
+        <div class="help-table">
+            {% for help in group.list %}
+            <div class="help-item">
+                <span class="help-icon">{{ help.icon | default('📌', true) }}</span>
+                <strong class="help-title">{{ help.title }}</strong>
+                <span class="help-desc">{{ help.desc }}</span>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+    </div>
+    {% endfor %}
+    {% endif %}
+
+    <!-- 底部提示 -->
+    <div class="footer-tips">
+        <div class="tip-item">💡 模式参数: 烽火/sol 或 mp/全面</div>
+        <div class="tip-item">💡 类型参数: 设备/道具/货币</div>
+    </div>
+
+    <!-- 版权信息 -->
+    <div class="copyright">{{ copyright | default('Created By AstrBot & DeltaForce-Plugin', true) }}</div>
+</div>
+{% endblock %}

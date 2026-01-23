@@ -1,0 +1,60 @@
+{% extends "common/common.html" %}
+{% block css %}
+<link rel="stylesheet" type="text/css" href="{{ _res_path }}Template/redRecord/redRecord.css"/>
+{% endblock %}
+{% block main %}
+<div class="container">
+    <!-- 头部区域 -->
+    <div class="header">
+        <div class="header-content">
+            <div class="header-left">
+                <img class="game-logo" src="{{ _res_path }}imgs/others/logo.png" alt="三角洲行动" />
+            </div>
+            <div class="header-right">
+                <div class="header-info">
+                    <span class="player-name">{{ userName }}</span>
+                    <span class="mode-name">大红记录</span>
+                </div>
+                <span class="time-stamp">第 {{ page }} 页</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="content">
+        <div class="record-list">
+            {% if records and records|length > 0 %}
+                {% for item in records %}
+                <div class="record-card">
+                    <!-- 左侧物品图片 -->
+                    <div class="item-image-section">
+                        <span class="record-index">#{{ loop.index }}</span>
+                        <div class="item-img-wrapper">
+                            <img class="item-img" src="{{ item.objectImage }}" alt="{{ item.objectName }}" onerror="this.style.display='none';" />
+                        </div>
+                    </div>
+
+                    <!-- 中间物品信息 -->
+                    <div class="item-info-section">
+                        <div class="item-name">{{ item.objectName }}</div>
+                        <div class="item-price">价值: {{ '{:,}'.format(item.price) }}</div>
+                        <div class="item-time">{{ item.time }}</div>
+                    </div>
+
+                    <!-- 右侧地图信息 -->
+                    <div class="map-info-section">
+                        <span class="map-name">{{ item.map }}</span>
+                    </div>
+                </div>
+                {% endfor %}
+            {% else %}
+                <div class="no-data">暂无大红记录</div>
+            {% endif %}
+        </div>
+    </div>
+    
+    <div class="template-footer">
+        <div class="copyright-text">由 DeltaForce-Plugin-Yunzai 强力驱动</div>
+    </div>
+</div>
+{% endblock %}
+{% block footer %}{% endblock %}

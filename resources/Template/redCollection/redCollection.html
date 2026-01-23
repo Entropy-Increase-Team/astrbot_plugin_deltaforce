@@ -1,0 +1,157 @@
+{% extends "common/common.html" %}
+{% block css %}
+<link rel="stylesheet" type="text/css" href="{{ _res_path }}Template/redCollection/redCollection.css"/>
+{% endblock %}
+{% block main %}
+<div class="container">
+    <!-- 头部区域 -->
+    <div class="header">
+        <div class="header-content">
+            <div class="header-left">
+                <img class="game-logo" src="{{ _res_path }}imgs/others/logo.png" alt="三角洲行动" />
+            </div>
+            <div class="header-center">
+                <span class="player-name">{{ userName }}</span>
+            </div>
+            <div class="header-right">
+                <div class="header-info">
+                    <span class="mode-name">大红收藏</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="content">
+        <div class="layout-wrapper">
+            <!-- 左侧TOP6部分 -->
+            <div class="top6-panel">
+                <div class="top6-header">TOP6 大红收藏</div>
+                
+                <!-- 展示TOP6大红，采用固定布局 -->
+                <div class="top6-grid">
+                    <!-- 第一个展示最大 -->
+                    <div class="top6-item top6-rank1">
+                        {% if topCollections[0] %}
+                        <span class="top6-rank-badge">No.1</span>
+                        <img class="top6-img" src="{{ topCollections[0].objectImage }}" alt="{{ topCollections[0].objectName }}" onerror="this.style.display='none';" />
+                        <div class="top6-info">
+                            <span class="top6-name">{{ topCollections[0].objectName }}</span>
+                            <span class="top6-price">{{ '{:,}'.format(topCollections[0].price) }}</span>
+                            <span class="top6-count">×{{ topCollections[0].count }}</span>
+                        </div>
+                        {% else %}
+                        <span class="top6-empty">暂无数据</span>
+                        {% endif %}
+                    </div>
+
+                    <!-- 第二个 -->
+                    <div class="top6-item top6-rank2">
+                        {% if topCollections[1] %}
+                        <span class="top6-rank-badge">No.2</span>
+                        <img class="top6-img" src="{{ topCollections[1].objectImage }}" alt="{{ topCollections[1].objectName }}" onerror="this.style.display='none';" />
+                        <div class="top6-info">
+                            <span class="top6-name">{{ topCollections[1].objectName }}</span>
+                            <span class="top6-price">{{ '{:,}'.format(topCollections[1].price) }}</span>
+                            <span class="top6-count">×{{ topCollections[1].count }}</span>
+                        </div>
+                        {% else %}
+                        <span class="top6-empty">暂无数据</span>
+                        {% endif %}
+                    </div>
+
+                    <!-- 第三个 -->
+                    <div class="top6-item top6-rank3">
+                        {% if topCollections[2] %}
+                        <span class="top6-rank-badge">No.3</span>
+                        <img class="top6-img" src="{{ topCollections[2].objectImage }}" alt="{{ topCollections[2].objectName }}" onerror="this.style.display='none';" />
+                        <div class="top6-info">
+                            <span class="top6-name">{{ topCollections[2].objectName }}</span>
+                            <span class="top6-price">{{ '{:,}'.format(topCollections[2].price) }}</span>
+                            <span class="top6-count">×{{ topCollections[2].count }}</span>
+                        </div>
+                        {% else %}
+                        <span class="top6-empty">暂无数据</span>
+                        {% endif %}
+                    </div>
+
+                    <!-- 第四个 -->
+                    <div class="top6-item top6-rank4">
+                        {% if topCollections[3] %}
+                        <span class="top6-rank-badge">No.4</span>
+                        <img class="top6-img" src="{{ topCollections[3].objectImage }}" alt="{{ topCollections[3].objectName }}" onerror="this.style.display='none';" />
+                        <div class="top6-info">
+                            <span class="top6-name">{{ topCollections[3].objectName }}</span>
+                            <span class="top6-price">{{ '{:,}'.format(topCollections[3].price) }}</span>
+                            <span class="top6-count">×{{ topCollections[3].count }}</span>
+                        </div>
+                        {% else %}
+                        <span class="top6-empty">暂无数据</span>
+                        {% endif %}
+                    </div>
+
+                    <!-- 第五个 -->
+                    <div class="top6-item top6-rank5">
+                        {% if topCollections[4] %}
+                        <span class="top6-rank-badge">No.5</span>
+                        <img class="top6-img" src="{{ topCollections[4].objectImage }}" alt="{{ topCollections[4].objectName }}" onerror="this.style.display='none';" />
+                        <div class="top6-info">
+                            <span class="top6-name">{{ topCollections[4].objectName }}</span>
+                            <span class="top6-price">{{ '{:,}'.format(topCollections[4].price) }}</span>
+                            <span class="top6-count">×{{ topCollections[4].count }}</span>
+                        </div>
+                        {% else %}
+                        <span class="top6-empty">暂无数据</span>
+                        {% endif %}
+                    </div>
+
+                    <!-- 第六个 -->
+                    <div class="top6-item top6-rank6">
+                        {% if topCollections[5] %}
+                        <span class="top6-rank-badge">No.6</span>
+                        <img class="top6-img" src="{{ topCollections[5].objectImage }}" alt="{{ topCollections[5].objectName }}" onerror="this.style.display='none';" />
+                        <div class="top6-info">
+                            <span class="top6-name">{{ topCollections[5].objectName }}</span>
+                            <span class="top6-price">{{ '{:,}'.format(topCollections[5].price) }}</span>
+                            <span class="top6-count">×{{ topCollections[5].count }}</span>
+                        </div>
+                        {% else %}
+                        <span class="top6-empty">暂无数据</span>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- 右侧所有大红收藏列表 -->
+            <div class="list-panel">
+                <div class="list-header">
+                    <span class="list-title">全部大红收藏</span>
+                    <span class="list-total-value">收藏总价值: {{ '{:,}'.format(totalCollectionValue) }}</span>
+                </div>
+                <div class="collection-list">
+                    {% if unlockedCollections and unlockedCollections|length > 0 %}
+                    {% for item in unlockedCollections %}
+                    <div class="collection-item">
+                        <div class="collection-img-box">
+                            <img class="collection-img" src="{{ item.objectImage }}" alt="{{ item.objectName }}" onerror="this.style.display='none';" />
+                        </div>
+                        <div class="collection-info">
+                            <span class="collection-name">{{ item.objectName }}</span>
+                            <span class="collection-price">{{ '{:,}'.format(item.price) }}</span>
+                            <span class="collection-count">×{{ item.count }}</span>
+                        </div>
+                    </div>
+                    {% endfor %}
+                    {% else %}
+                    <div class="no-data">暂无收藏数据</div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="template-footer">
+        <div class="copyright-text">由 DeltaForce-Plugin-Yunzai 强力驱动</div>
+    </div>
+</div>
+{% endblock %}
+{% block footer %}{% endblock %}

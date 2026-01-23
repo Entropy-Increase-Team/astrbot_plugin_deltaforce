@@ -1,0 +1,209 @@
+{% extends "common/common.html" %}
+{% block css %}
+<link rel="stylesheet" type="text/css" href="{{ _res_path }}Template/dailyReport/dailyReport.css"/>
+{% endblock %}
+{% block main %}
+<div class="container {% if type == 'daily' and not (mpDetail and solDetail and solDetail.recentGainDate) %}single-mode{% endif %}">
+    <!-- 整体背景图片 -->
+    <img class="bg-image" src="{{ _res_path }}imgs/others/loading13.png" />
+    
+    <!-- ========== 头部区域 ========== -->
+    <div class="header">
+        <div class="header-content">
+            <div class="header-left">
+                <img class="game-logo" src="{{ _res_path }}imgs/others/logo.png" alt="三角洲行动" />
+            {% if type == 'profit' %}
+            <div class="title">收益TOP3物资</div>
+            {% endif %}
+            </div>
+            <div class="header-right">
+                <div class="user-avatar-wrapper">
+                    <img class="user-avatar" src="{{ userAvatar }}" alt="用户头像" onerror="this.style.display='none';" />
+                </div>
+                <div class="header-meta">
+                    {% if userName %}
+                    <span class="user-name">{{ userName }}</span>
+                    {% endif %}
+                    {% if type == 'daily' %}
+                        {% if currentDate %}
+                        <span class="report-date">{{ currentDate }}</span>
+                        {% endif %}
+                    {% elif type == 'profit' %}
+                        {% if profitData and profitData.gainDate %}
+                        <span class="report-date">{{ profitData.gainDate }}</span>
+                        {% endif %}
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="content">
+        {% if type == 'profit' %}
+        <!-- 昨日收益模式 -->
+        <div class="profit-section">
+            {% if profitData.topItems and profitData.topItems|length > 0 %}
+            <div class="items-list">
+                {% for item in profitData.topItems %}
+                <div class="item-card">
+                    <div class="item-rank">#{{ loop.index }}</div>
+                    {% if item.imageUrl %}
+                    <div class="item-image-wrapper">
+                        <img class="item-image" src="{{ item.imageUrl }}" alt="{{ item.objectName }}" onerror="this.style.display='none'; this.parentElement.style.display='none';" />
+                    </div>
+                    {% endif %}
+                    <div class="item-info">
+                        <div class="item-name">{{ item.objectName }}</div>
+                        <div class="item-count">×{{ item.count }}</div>
+                    </div>
+                    <div class="item-price">{{ item.price }}</div>
+                </div>
+                {% endfor %}
+            </div>
+            <div class="total-gain">
+                <span class="label">{{ profitData.gainDate or '昨日' }}总收益:</span>
+                <span class="value {% if profitData.recentGain >= 0 %}positive{% else %}negative{% endif %}">
+                    {% if profitData.recentGain >= 0 %}+{% endif %}{{ profitData.recentGain }}
+                </span>
+            </div>
+            {% else %}
+            <div class="no-data">
+                <p>昨日未带出任何高价值物资</p>
+                <div class="total-gain">
+                    <span class="label">{{ profitData.gainDate or '昨日' }}总收益:</span>
+                    <span class="value">{{ profitData.recentGain }}</span>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+        {% else %}
+        <!-- 日报模式 -->
+        <div class="report-grid {% if (solDetail or (not mode or mode == 'sol')) and (mpDetail or (not mode or mode == 'mp')) %}two-cards{% else %}single-card{% endif %}">
+            {% if solDetail or (not mode or mode == 'sol') %}
+            <!-- 烽火地带卡片 -->
+            <div class="mode-card sol-card">
+                <div class="card-header" style="background-image: url('{{ _res_path }}imgs/others/fire_limit_normal.png');">
+                    <div class="mode-title">
+                        烽火地带
+                        {% if solDetail and solDetail.recentGainDate %}
+                        <span class="mode-date">{{ solDetail.recentGainDate }}</span>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="card-body">
+                    {% if solDetail and solDetail.recentGainDate and not solDetail.isEmpty %}
+                    <div class="stat-item full-width highlight-large">
+                        <span class="stat-label-overlay">最近带出总价值</span>
+                        <span class="stat-value">{{ solDetail.recentGain }}</span>
+                    </div>
+                    {% if solDetail.topItems and solDetail.topItems|length > 0 %}
+                    <div class="items-section">
+                        <div class="items-title">近期高价值物资</div>
+                        <div class="items-list">
+                            {% for item in solDetail.topItems %}
+                            <div class="item-row">
+                                {% if item.imageUrl %}
+                                <div class="item-image-wrapper">
+                                    <img class="item-image" src="{{ item.imageUrl }}" alt="{{ item.objectName }}" onerror="this.style.display='none'" />
+                                </div>
+                                {% endif %}
+                                <span class="item-name">{{ item.objectName }}</span>
+                                <span class="item-price">{{ item.price }}</span>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% endif %}
+                    {% else %}
+                    <div class="no-data-text">暂无数据</div>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+
+            {% if mpDetail or (not mode or mode == 'mp') %}
+            <!-- 全面战场卡片 -->
+            <div class="mode-card mp-card">
+                <div class="card-header" style="background-image: url('{{ _res_path }}imgs/others/allwar_limit_normal.png');">
+                    <div class="mode-title">
+                        全面战场
+                        {% if mpDetail and mpDetail.recentDate and mpDetail.recentDate.strip() != '' %}
+                        <span class="mode-date">{{ mpDetail.recentDate }}</span>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="card-body">
+                    {% if mpDetail and mpDetail.recentDate and mpDetail.recentDate.strip() != '' and not mpDetail.isEmpty %}
+                    <div class="stats-overview">
+                        <div class="stat-item">
+                            <span class="stat-label-overlay">总对局</span>
+                            <span class="stat-value">{{ mpDetail.totalFightNum }}</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label-overlay">胜利</span>
+                            <span class="stat-value highlight">{{ mpDetail.totalWinNum }}</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label-overlay">总击杀</span>
+                            <span class="stat-value">{{ mpDetail.totalKillNum }}</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label-overlay">总得分</span>
+                            <span class="stat-value highlight">{{ mpDetail.totalScore }}</span>
+                        </div>
+                    </div>
+                    <div class="stats-overview">
+                        <div class="stat-item stat-item-card">
+                            <div class="mp-card-item" {% if mpDetail.operatorImage %}style="background-image: url('{{ _res_path }}{{ mpDetail.operatorImage }}');"{% endif %}>
+                                <span class="stat-label-overlay">最常用干员</span>
+                            </div>
+                        </div>
+                    </div>
+                    {% if mpDetail.bestMatch %}
+                    <div class="best-match">
+                        <div class="best-match-header">
+                            <div class="best-match-title">当日最佳</div>
+                        </div>
+                        {% if mpDetail.bestMatch.mapImage %}
+                        <div class="best-match-bg" style="background-image: url('{{ _res_path }}{{ mpDetail.bestMatch.mapImage }}');"></div>
+                        {% endif %}
+                        <div class="best-match-content">
+                            <div class="best-match-row">
+                                <span class="best-label">地图:</span>
+                                <span class="best-value">{{ mpDetail.bestMatch.mapName }}</span>
+                            </div>
+                            <div class="best-match-row">
+                                <span class="best-label">时间:</span>
+                                <span class="best-value">{{ mpDetail.bestMatch.dtEventTime }}</span>
+                            </div>
+                            <div class="best-match-row">
+                                <span class="best-label">结果:</span>
+                                <span class="best-value {% if mpDetail.bestMatch.isWinner %}result-win{% else %}result-lose{% endif %}">
+                                    {% if mpDetail.bestMatch.isWinner %}胜利{% else %}失败{% endif %}
+                                </span>
+                                <span class="kda">KDA: {{ mpDetail.bestMatch.killNum }}/{{ mpDetail.bestMatch.death }}/{{ mpDetail.bestMatch.assist }}</span>
+                            </div>
+                            <div class="best-match-row">
+                                <span class="best-label">得分:</span>
+                                <span class="best-value highlight">{{ mpDetail.bestMatch.score }}</span>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+                    {% else %}
+                    <div class="no-data-text">暂无数据</div>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+        </div>
+        {% endif %}
+    </div>
+    
+    <!-- 页脚 -->
+    <div class="template-footer">
+        <div class="copyright-text">由 DeltaForce-Plugin-AstrBot 强力驱动</div>
+    </div>
+</div>
+{% endblock %}
+{% block footer %}{% endblock %}
