@@ -10,5 +10,65 @@
     "type": "string",
     "hint": "机器人后端用户ID (在个人中心获取)",
     "obvious_hint": true
+  },
+  "push_daily_keyword_enabled": {
+    "description": "每日密码推送开关",
+    "type": "bool",
+    "hint": "是否启用每日密码自动推送",
+    "default": false
+  },
+  "push_daily_keyword_cron": {
+    "description": "每日密码推送时间",
+    "type": "string",
+    "hint": "cron表达式，默认每天8点 (0 8 * * *)",
+    "default": "0 8 * * *"
+  },
+  "push_daily_keyword_groups": {
+    "description": "每日密码推送群列表",
+    "type": "string",
+    "hint": "推送群号，多个用逗号分隔，如: 123456,789012",
+    "default": ""
+  },
+  "push_daily_report_enabled": {
+    "description": "日报推送开关",
+    "type": "bool",
+    "hint": "是否启用日报自动推送",
+    "default": false
+  },
+  "push_daily_report_cron": {
+    "description": "日报推送时间",
+    "type": "string",
+    "hint": "cron表达式，默认每天10点 (0 10 * * *)",
+    "default": "0 10 * * *"
+  },
+  "push_weekly_report_enabled": {
+    "description": "周报推送开关",
+    "type": "bool",
+    "hint": "是否启用周报自动推送",
+    "default": false
+  },
+  "push_weekly_report_cron": {
+    "description": "周报推送时间",
+    "type": "string",
+    "hint": "cron表达式，默认每周一10点 (0 10 * * 1)",
+    "default": "0 10 * * 1"
+  },
+  "push_place_task_enabled": {
+    "description": "特勤处推送开关",
+    "type": "bool",
+    "hint": "是否启用特勤处制造完成自动推送",
+    "default": true
+  },
+  "broadcast_admin_users": {
+    "description": "广播管理员",
+    "type": "string",
+    "hint": "有权限发送广播的用户ID，多个用逗号分隔",
+    "default": ""
+  },
+  "broadcast_default_targets": {
+    "description": "广播默认目标",
+    "type": "string",
+    "hint": "广播默认发送的群号，多个用逗号分隔",
+    "default": ""
   }
 }
