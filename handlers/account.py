@@ -25,7 +25,7 @@ class AccountHandler(BaseHandler):
         
         result_sig = await self.api.login_qqck_(cookie)
         if not self.is_success(result_sig):
-            yield self.chain_reply(event, f"ck登录失败，错误代码：{result_sig.get('msg', '未知错误')}")
+            yield self.chain_reply(event, f"ck登录失败，错误代码：{self.get_error_msg(result_sig)}")
             return
         
         frameworkToken = result_sig.get("frameworkToken", "")
@@ -45,7 +45,7 @@ class AccountHandler(BaseHandler):
         
         result_list = await self.api.user_acc_list(platformId=event.get_sender_id())
         if not self.is_success(result_list):
-            yield self.chain_reply(event, f"获取账号列表失败，错误代码：{result_list.get('msg', '未知错误')}")
+            yield self.chain_reply(event, f"获取账号列表失败，错误代码：{self.get_error_msg(result_list)}")
             return
         
         result_bind = await self.api.user_bind(platformId=event.get_sender_id(), frameworkToken=frameworkToken)
@@ -56,7 +56,7 @@ class AccountHandler(BaseHandler):
         )
         
         if not self.is_success(result_bind) or not result_db_bind:
-            yield self.chain_reply(event, f"绑定账号失败，错误代码：{result_bind.get('msg', '未知错误')}")
+            yield self.chain_reply(event, f"绑定账号失败，错误代码：{self.get_error_msg(result_bind)}")
             return
         
         yield self.chain_reply(event, "登录绑定成功！")
@@ -65,7 +65,7 @@ class AccountHandler(BaseHandler):
         """QQ 二维码登录"""
         result_sig = await self.api.login_qq_get_qrcode()
         if not self.is_success(result_sig):
-            yield self.chain_reply(event, f"获取二维码失败，错误代码：{result_sig.get('msg', '未知错误')}")
+            yield self.chain_reply(event, f"获取二维码失败，错误代码：{self.get_error_msg(result_sig)}")
             return
         
         frameworkToken = result_sig.get("frameworkToken", "")
@@ -95,7 +95,7 @@ class AccountHandler(BaseHandler):
         
         result_list = await self.api.user_acc_list(platformId=event.get_sender_id())
         if not self.is_success(result_list):
-            yield self.chain_reply(event, f"获取账号列表失败，错误代码：{result_list.get('msg', '未知错误')}")
+            yield self.chain_reply(event, f"获取账号列表失败，错误代码：{self.get_error_msg(result_list)}")
             return
         
         result_bind = await self.api.user_bind(platformId=event.get_sender_id(), frameworkToken=frameworkToken)
@@ -106,7 +106,7 @@ class AccountHandler(BaseHandler):
         )
         
         if not self.is_success(result_bind) or not result_db_bind:
-            yield self.chain_reply(event, f"绑定账号失败，错误代码：{result_bind.get('msg', '未知错误')}")
+            yield self.chain_reply(event, f"绑定账号失败，错误代码：{self.get_error_msg(result_bind)}")
             return
         
         yield self.chain_reply(event, "登录绑定成功！")
@@ -115,7 +115,7 @@ class AccountHandler(BaseHandler):
         """微信二维码登录"""
         result_sig = await self.api.login_wechat_get_qrcode()
         if not self.is_success(result_sig):
-            yield self.chain_reply(event, f"获取二维码失败，错误代码：{result_sig.get('msg', '未知错误')}")
+            yield self.chain_reply(event, f"获取二维码失败，错误代码：{self.get_error_msg(result_sig)}")
             return
         
         frameworkToken = result_sig.get("frameworkToken", "")
@@ -144,7 +144,7 @@ class AccountHandler(BaseHandler):
         
         result_list = await self.api.user_acc_list(platformId=event.get_sender_id())
         if not self.is_success(result_list):
-            yield self.chain_reply(event, f"获取账号列表失败，错误代码：{result_list.get('msg', '未知错误')}")
+            yield self.chain_reply(event, f"获取账号列表失败，错误代码：{self.get_error_msg(result_list)}")
             return
         
         result_bind = await self.api.user_bind(platformId=event.get_sender_id(), frameworkToken=frameworkToken)
@@ -155,7 +155,7 @@ class AccountHandler(BaseHandler):
         )
         
         if not self.is_success(result_bind) or not result_db_bind:
-            yield self.chain_reply(event, f"绑定账号失败，错误代码：{result_bind.get('msg', '未知错误')}")
+            yield self.chain_reply(event, f"绑定账号失败，错误代码：{self.get_error_msg(result_bind)}")
             return
         
         yield self.chain_reply(event, "登录绑定成功！")
@@ -164,7 +164,7 @@ class AccountHandler(BaseHandler):
         """QQ安全中心登录"""
         result_sig = await self.api.login_qqsafe_qrcode()
         if not self.is_success(result_sig):
-            yield self.chain_reply(event, f"获取二维码失败，错误代码：{result_sig.get('msg', '未知错误')}")
+            yield self.chain_reply(event, f"获取二维码失败，错误代码：{self.get_error_msg(result_sig)}")
             return
         
         frameworkToken = result_sig.get("frameworkToken", "")
@@ -191,7 +191,7 @@ class AccountHandler(BaseHandler):
         
         result_list = await self.api.user_acc_list(platformId=event.get_sender_id())
         if not self.is_success(result_list):
-            yield self.chain_reply(event, f"获取账号列表失败，错误代码：{result_list.get('msg', '未知错误')}")
+            yield self.chain_reply(event, f"获取账号列表失败，错误代码：{self.get_error_msg(result_list)}")
             return
         
         result_bind = await self.api.user_bind(platformId=event.get_sender_id(), frameworkToken=frameworkToken)
@@ -202,7 +202,7 @@ class AccountHandler(BaseHandler):
         )
         
         if not self.is_success(result_bind) or not result_db_bind:
-            yield self.chain_reply(event, f"绑定账号失败，错误代码：{result_bind.get('msg', '未知错误')}")
+            yield self.chain_reply(event, f"绑定账号失败，错误代码：{self.get_error_msg(result_bind)}")
             return
         
         yield self.chain_reply(event, "登录绑定成功！")
@@ -211,7 +211,7 @@ class AccountHandler(BaseHandler):
         """WeGame 登录"""
         result_sig = await self.api.login_wegame_qrcode()
         if not self.is_success(result_sig):
-            yield self.chain_reply(event, f"获取二维码失败，错误代码：{result_sig.get('msg', '未知错误')}")
+            yield self.chain_reply(event, f"获取二维码失败，错误代码：{self.get_error_msg(result_sig)}")
             return
         
         frameworkToken = result_sig.get("frameworkToken", "")
@@ -238,7 +238,7 @@ class AccountHandler(BaseHandler):
         
         result_list = await self.api.user_acc_list(platformId=event.get_sender_id())
         if not self.is_success(result_list):
-            yield self.chain_reply(event, f"获取账号列表失败，错误代码：{result_list.get('msg', '未知错误')}")
+            yield self.chain_reply(event, f"获取账号列表失败，错误代码：{self.get_error_msg(result_list)}")
             return
         
         result_bind = await self.api.user_bind(platformId=event.get_sender_id(), frameworkToken=frameworkToken)
@@ -249,7 +249,7 @@ class AccountHandler(BaseHandler):
         )
         
         if not self.is_success(result_bind) or not result_db_bind:
-            yield self.chain_reply(event, f"绑定账号失败，错误代码：{result_bind.get('msg', '未知错误')}")
+            yield self.chain_reply(event, f"绑定账号失败，错误代码：{self.get_error_msg(result_bind)}")
             return
         
         yield self.chain_reply(event, "登录绑定成功！")
@@ -258,7 +258,7 @@ class AccountHandler(BaseHandler):
         """账号列表"""
         result_list = await self.api.user_acc_list(platformId=event.get_sender_id())
         if not self.is_success(result_list):
-            yield self.chain_reply(event, f"获取账号列表失败，错误代码：{result_list.get('msg', '未知错误')}")
+            yield self.chain_reply(event, f"获取账号列表失败，错误代码：{self.get_error_msg(result_list)}")
             return
         
         accounts = result_list.get("data", [])
@@ -367,7 +367,7 @@ class AccountHandler(BaseHandler):
         """解绑账号"""
         result_list = await self.api.user_acc_list(platformId=event.get_sender_id())
         if not self.is_success(result_list):
-            yield self.chain_reply(event, f"获取账号列表失败，错误代码：{result_list.get('msg', '未知错误')}")
+            yield self.chain_reply(event, f"获取账号列表失败，错误代码：{self.get_error_msg(result_list)}")
             return
         
         accounts = result_list.get("data", [])
@@ -384,7 +384,7 @@ class AccountHandler(BaseHandler):
         result_db_unbind = await self.db_manager.upsert_user(user=event.get_sender_id(), selection=value - 1, token=None)
         
         if not self.is_success(result_unbind) or not result_db_unbind:
-            yield self.chain_reply(event, f"解绑账号失败，错误代码：{result_unbind.get('msg', '未知错误')}")
+            yield self.chain_reply(event, f"解绑账号失败，错误代码：{self.get_error_msg(result_unbind)}")
             return
         
         yield self.chain_reply(event, "解绑账号成功")
@@ -393,7 +393,7 @@ class AccountHandler(BaseHandler):
         """删除账号（仅支持QQ/微信）"""
         result_list = await self.api.user_acc_list(platformId=event.get_sender_id())
         if not self.is_success(result_list):
-            yield self.chain_reply(event, f"获取账号列表失败，错误代码：{result_list.get('msg', '未知错误')}")
+            yield self.chain_reply(event, f"获取账号列表失败，错误代码：{self.get_error_msg(result_list)}")
             return
         
         accounts = result_list.get("data", [])
@@ -420,7 +420,7 @@ class AccountHandler(BaseHandler):
         result_db = await self.db_manager.upsert_user(user=event.get_sender_id(), selection=value - 1, token=None)
         
         if not self.is_success(result_delete) or not result_db:
-            yield self.chain_reply(event, f"删除账号失败，错误代码：{result_delete.get('msg', '未知错误')}")
+            yield self.chain_reply(event, f"删除账号失败，错误代码：{self.get_error_msg(result_delete)}")
             return
         
         yield self.chain_reply(event, "删除账号登录数据成功")
@@ -429,7 +429,7 @@ class AccountHandler(BaseHandler):
         """切换账号"""
         result_list = await self.api.user_acc_list(platformId=event.get_sender_id())
         if not self.is_success(result_list):
-            yield self.chain_reply(event, f"获取账号列表失败，错误代码：{result_list.get('msg', '未知错误')}")
+            yield self.chain_reply(event, f"获取账号列表失败，错误代码：{self.get_error_msg(result_list)}")
             return
         
         accounts = result_list.get("data", [])
@@ -462,7 +462,7 @@ class AccountHandler(BaseHandler):
             result = await self.api.login_qq_refresh(token)
             
             if not self.is_success(result):
-                yield self.chain_reply(event, f"刷新失败：{result.get('msg', '未知错误')}\n请重新扫码登录")
+                yield self.chain_reply(event, f"刷新失败：{self.get_error_msg(result)}\n请重新扫码登录")
                 return
 
             new_token = result.get("frameworkToken", "")
@@ -492,7 +492,7 @@ class AccountHandler(BaseHandler):
             result = await self.api.login_wechat_refresh(token)
             
             if not self.is_success(result):
-                yield self.chain_reply(event, f"刷新失败：{result.get('msg', '未知错误')}\n请重新扫码登录")
+                yield self.chain_reply(event, f"刷新失败：{self.get_error_msg(result)}\n请重新扫码登录")
                 return
 
             new_token = result.get("frameworkToken", "")
@@ -519,7 +519,7 @@ class AccountHandler(BaseHandler):
             )
             
             if not self.is_success(result) or not result.get("login_url"):
-                yield self.chain_reply(event, f"获取授权链接失败：{result.get('msg', '未知错误')}")
+                yield self.chain_reply(event, f"获取授权链接失败：{self.get_error_msg(result)}")
                 return
             
             login_url = result.get("login_url", "")
@@ -540,7 +540,7 @@ class AccountHandler(BaseHandler):
             result = await self.api.login_qq_oauth_submit(auth_url)
             
             if not self.is_success(result):
-                yield self.chain_reply(event, f"OAuth授权失败：{result.get('msg', '未知错误')}")
+                yield self.chain_reply(event, f"OAuth授权失败：{self.get_error_msg(result)}")
                 return
             
             framework_token = result.get("frameworkToken", "")
@@ -560,7 +560,7 @@ class AccountHandler(BaseHandler):
             if self.is_success(result_bind) and result_db:
                 yield self.chain_reply(event, "✅ QQ OAuth授权登录成功！")
             else:
-                yield self.chain_reply(event, f"绑定账号失败：{result_bind.get('msg', '未知错误')}")
+                yield self.chain_reply(event, f"绑定账号失败：{self.get_error_msg(result_bind)}")
                 
         except Exception as e:
             yield self.chain_reply(event, f"OAuth登录失败：{e}")
@@ -574,7 +574,7 @@ class AccountHandler(BaseHandler):
             )
             
             if not self.is_success(result) or not result.get("login_url"):
-                yield self.chain_reply(event, f"获取授权链接失败：{result.get('msg', '未知错误')}")
+                yield self.chain_reply(event, f"获取授权链接失败：{self.get_error_msg(result)}")
                 return
             
             login_url = result.get("login_url", "")
@@ -593,7 +593,7 @@ class AccountHandler(BaseHandler):
             result = await self.api.login_wechat_oauth_submit(auth_url)
             
             if not self.is_success(result):
-                yield self.chain_reply(event, f"OAuth授权失败：{result.get('msg', '未知错误')}")
+                yield self.chain_reply(event, f"OAuth授权失败：{self.get_error_msg(result)}")
                 return
             
             framework_token = result.get("frameworkToken", "")
@@ -613,7 +613,7 @@ class AccountHandler(BaseHandler):
             if self.is_success(result_bind) and result_db:
                 yield self.chain_reply(event, "✅ 微信OAuth授权登录成功！")
             else:
-                yield self.chain_reply(event, f"绑定账号失败：{result_bind.get('msg', '未知错误')}")
+                yield self.chain_reply(event, f"绑定账号失败：{self.get_error_msg(result_bind)}")
                 
         except Exception as e:
             yield self.chain_reply(event, f"OAuth登录失败：{e}")

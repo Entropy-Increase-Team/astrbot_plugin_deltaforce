@@ -32,7 +32,7 @@ class RoomHandler(BaseHandler):
             result = await self.api.get_room_list(room_type=room_type, has_password=has_password)
             
             if not self.is_success(result):
-                yield self.chain_reply(event, f"❌ 获取房间列表失败：{result.get('msg', '未知错误')}")
+                yield self.chain_reply(event, f"❌ 获取房间列表失败：{self.get_error_msg(result)}")
                 return
 
             rooms = result.get("data", {}).get("rooms", [])
@@ -107,7 +107,7 @@ class RoomHandler(BaseHandler):
             result = await self.api.create_room(token, room_type, map_id, tag, password)
             
             if not self.is_success(result):
-                yield self.chain_reply(event, f"❌ 创建房间失败：{result.get('msg', '未知错误')}")
+                yield self.chain_reply(event, f"❌ 创建房间失败：{self.get_error_msg(result)}")
                 return
 
             room_data = result.get("data", {})
@@ -141,7 +141,7 @@ class RoomHandler(BaseHandler):
             result = await self.api.join_room(token, room_id, password)
             
             if not self.is_success(result):
-                yield self.chain_reply(event, f"❌ 加入房间失败：{result.get('msg', '未知错误')}")
+                yield self.chain_reply(event, f"❌ 加入房间失败：{self.get_error_msg(result)}")
                 return
 
             yield self.chain_reply(event, f"✅ 成功加入房间 #{room_id}")
@@ -164,7 +164,7 @@ class RoomHandler(BaseHandler):
             result = await self.api.quit_room(token, room_id)
             
             if not self.is_success(result):
-                yield self.chain_reply(event, f"❌ 退出房间失败：{result.get('msg', '未知错误')}")
+                yield self.chain_reply(event, f"❌ 退出房间失败：{self.get_error_msg(result)}")
                 return
 
             yield self.chain_reply(event, f"✅ 已退出房间 #{room_id}")
@@ -183,7 +183,7 @@ class RoomHandler(BaseHandler):
             result = await self.api.get_room_info(token)
             
             if not self.is_success(result):
-                yield self.chain_reply(event, f"❌ 获取房间信息失败：{result.get('msg', '未知错误')}")
+                yield self.chain_reply(event, f"❌ 获取房间信息失败：{self.get_error_msg(result)}")
                 return
 
             room = result.get("data", {})
@@ -233,7 +233,7 @@ class RoomHandler(BaseHandler):
             result = await self.api.kick_member(token, room_id, target)
             
             if not self.is_success(result):
-                yield self.chain_reply(event, f"❌ 踢出失败：{result.get('msg', '未知错误')}")
+                yield self.chain_reply(event, f"❌ 踢出失败：{self.get_error_msg(result)}")
                 return
 
             yield self.chain_reply(event, "✅ 已踢出该成员")
@@ -247,7 +247,7 @@ class RoomHandler(BaseHandler):
             result = await self.api.get_room_tags()
             
             if not self.is_success(result):
-                yield self.chain_reply(event, f"❌ 获取标签失败：{result.get('msg', '未知错误')}")
+                yield self.chain_reply(event, f"❌ 获取标签失败：{self.get_error_msg(result)}")
                 return
 
             tags = result.get("data", [])
@@ -272,7 +272,7 @@ class RoomHandler(BaseHandler):
             result = await self.api.get_room_maps()
             
             if not self.is_success(result):
-                yield self.chain_reply(event, f"❌ 获取地图列表失败：{result.get('msg', '未知错误')}")
+                yield self.chain_reply(event, f"❌ 获取地图列表失败：{self.get_error_msg(result)}")
                 return
 
             maps = result.get("data", [])

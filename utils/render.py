@@ -198,7 +198,11 @@ class Render:
                             pass
                 
         except Exception as e:
-            logger.error(f"[Render] 图片渲染失败: {e}")
+            error_msg = str(e)
+            if "loading shared libraries" in error_msg or "libnspr4.so" in error_msg:
+                logger.error(f"[Render] 图片渲染失败: 缺少系统依赖。如果你在 Linux/Docker 环境下运行，请尝试运行: playwright install-deps")
+            else:
+                logger.error(f"[Render] 图片渲染失败: {e}")
             return None
     
     @classmethod

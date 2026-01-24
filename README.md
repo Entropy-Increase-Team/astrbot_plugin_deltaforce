@@ -106,6 +106,9 @@ pip install apscheduler
    ```bash
    pip install -r requirements.txt
    playwright install chromium
+   
+   # 如果在 Linux / Docker 环境下运行，可能还需要安装系统依赖：
+   playwright install-deps
    ```
 3. 在 AstrBot 配置中添加 `token` 和 `clientid`
 4. 重启 AstrBot

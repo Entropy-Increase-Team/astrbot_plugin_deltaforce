@@ -58,8 +58,8 @@ class ToolsHandler(BaseHandler):
         keyword = keyword.strip()
         result = await self.api.search_object(keyword=keyword)
         
-        if not result.get("success", False) and not self.is_success(result):
-            yield self.chain_reply(event, f"搜索失败：{result.get('message', result.get('msg', '未知错误'))}")
+        if not self.is_success(result):
+            yield self.chain_reply(event, f"搜索失败：{self.get_error_msg(result)}")
             return
 
         data = result.get("data", {})
@@ -113,7 +113,7 @@ class ToolsHandler(BaseHandler):
         else:
             # 名称搜索
             search_result = await self.api.search_object(keyword=query)
-            if search_result.get("success", False) or self.is_success(search_result):
+            if self.is_success(search_result):
                 items = search_result.get("data", {}).get("keywords", [])
                 if items:
                     # 取前5个结果
@@ -130,8 +130,8 @@ class ToolsHandler(BaseHandler):
         # 查询价格
         result = await self.api.get_current_price(",".join(object_ids))
         
-        if not result.get("success", False) and not self.is_success(result):
-            yield self.chain_reply(event, f"查询价格失败：{result.get('message', result.get('msg', '未知错误'))}")
+        if not self.is_success(result):
+            yield self.chain_reply(event, f"查询价格失败：{self.get_error_msg(result)}")
             return
 
         price_data = result.get("data", {})
@@ -182,7 +182,7 @@ class ToolsHandler(BaseHandler):
             object_id = query
         else:
             search_result = await self.api.search_object(keyword=query)
-            if search_result.get("success", False) or self.is_success(search_result):
+            if self.is_success(search_result):
                 items = search_result.get("data", {}).get("keywords", [])
                 if items:
                     object_id = str(items[0].get("objectID", ""))
@@ -195,8 +195,8 @@ class ToolsHandler(BaseHandler):
         # 查询历史价格
         result = await self.api.get_price_history(object_id)
 
-        if not result.get("success", False) and not self.is_success(result):
-            yield self.chain_reply(event, f"查询失败：{result.get('message', result.get('msg', '未知错误'))}")
+        if not self.is_success(result):
+            yield self.chain_reply(event, f"查询失败：{self.get_error_msg(result)}")
             return
 
         data = result.get("data", {})
@@ -264,7 +264,7 @@ class ToolsHandler(BaseHandler):
             object_id = query
         else:
             search_result = await self.api.search_object(keyword=query)
-            if search_result.get("success", False) or self.is_success(search_result):
+            if self.is_success(search_result):
                 items = search_result.get("data", {}).get("keywords", [])
                 if items:
                     object_id = str(items[0].get("objectID", ""))
@@ -278,8 +278,8 @@ class ToolsHandler(BaseHandler):
         price_result = await self.api.get_price_history(object_id)
         material_result = await self.api.get_material_price(object_id)
 
-        if not price_result.get("success", False) and not self.is_success(price_result):
-            yield self.chain_reply(event, f"查询失败：{price_result.get('message', price_result.get('msg', '未知错误'))}")
+        if not self.is_success(price_result):
+            yield self.chain_reply(event, f"查询失败：{self.get_error_msg(price_result)}")
             return
 
         price_data = price_result.get("data", {})
@@ -289,7 +289,7 @@ class ToolsHandler(BaseHandler):
         # 获取材料成本
         material_cost = 0
         materials = []
-        if material_result.get("success", False) or self.is_success(material_result):
+        if self.is_success(material_result):
             mat_data = material_result.get("data", {})
             if isinstance(mat_data, dict):
                 materials = mat_data.get("materials", [])
@@ -342,8 +342,8 @@ class ToolsHandler(BaseHandler):
 
         result = await self.api.get_material_price(query.strip() if query else "")
         
-        if not result.get("success", False) and not self.is_success(result):
-            yield self.chain_reply(event, f"查询失败：{result.get('message', result.get('msg', '未知错误'))}")
+        if not self.is_success(result):
+            yield self.chain_reply(event, f"查询失败：{self.get_error_msg(result)}")
             return
 
         data = result.get("data", [])
@@ -389,8 +389,8 @@ class ToolsHandler(BaseHandler):
 
         result = await self.api.get_profit_rank(rank_type=rank_type, place=place)
         
-        if not result.get("success", False) and not self.is_success(result):
-            yield self.chain_reply(event, f"查询失败：{result.get('message', result.get('msg', '未知错误'))}")
+        if not self.is_success(result):
+            yield self.chain_reply(event, f"查询失败：{self.get_error_msg(result)}")
             return
 
         data = result.get("data", [])
@@ -458,7 +458,7 @@ class ToolsHandler(BaseHandler):
         )
 
         if not self.is_success(result):
-            yield self.chain_reply(event, f"查询失败：{result.get('msg', '未知错误')}")
+            yield self.chain_reply(event, f"查询失败：{self.get_error_msg(result)}")
             return
 
         data = result.get("data", [])
@@ -603,8 +603,8 @@ class ToolsHandler(BaseHandler):
 
         result = await self.api.get_object_list(primary=primary, second=second)
         
-        if not result.get("success", False) and not self.is_success(result):
-            yield self.chain_reply(event, f"查询失败：{result.get('message', result.get('msg', '未知错误'))}")
+        if not self.is_success(result):
+            yield self.chain_reply(event, f"查询失败：{self.get_error_msg(result)}")
             return
 
         data = result.get("data", {})
@@ -661,7 +661,7 @@ class ToolsHandler(BaseHandler):
         result = await self.api.get_collection(frameworkToken=token)
         
         if not self.is_success(result):
-            yield self.chain_reply(event, f"查询失败：{result.get('msg', '未知错误')}")
+            yield self.chain_reply(event, f"查询失败：{self.get_error_msg(result)}")
             return
 
         data = result.get("data", {})
@@ -743,8 +743,8 @@ class ToolsHandler(BaseHandler):
 
         result = await self.api.get_profit_rank_v2(rank_type=rank_type, place=place)
         
-        if not result.get("success", False) and not self.is_success(result):
-            yield self.chain_reply(event, f"查询失败：{result.get('message', result.get('msg', '未知错误'))}")
+        if not self.is_success(result):
+            yield self.chain_reply(event, f"查询失败：{self.get_error_msg(result)}")
             return
 
         data = result.get("data", {})
@@ -825,7 +825,7 @@ class ToolsHandler(BaseHandler):
         for place_info in places:
             result = await self.api.get_profit_rank_v2(rank_type=rank_type, place=place_info["key"])
             
-            if not result.get("success", False) and not self.is_success(result):
+            if not self.is_success(result):
                 output_lines.append(f"\n{place_info['name']}: 获取失败")
                 continue
 
@@ -864,8 +864,8 @@ class ToolsHandler(BaseHandler):
         
         result = await self.api.get_article_list()
         
-        if not result.get("success", False) and not self.is_success(result):
-            yield self.chain_reply(event, f"获取文章列表失败：{result.get('msg', '未知错误')}")
+        if not self.is_success(result):
+            yield self.chain_reply(event, f"获取文章列表失败：{self.get_error_msg(result)}")
             return
         
         articles_data = result.get("data", {}).get("articles", {}).get("list", {})
@@ -916,8 +916,8 @@ class ToolsHandler(BaseHandler):
         
         result = await self.api.get_article_detail(thread_id)
         
-        if not result.get("success", False) and not self.is_success(result):
-            yield self.chain_reply(event, f"获取文章详情失败：{result.get('msg', '文章不存在或已删除')}")
+        if not self.is_success(result):
+            yield self.chain_reply(event, f"获取文章详情失败：{self.get_error_msg(result, '文章不存在或已删除')}")
             return
         
         article = result.get("data", {}).get("article", {})

@@ -189,7 +189,7 @@ class DataHandler(BaseHandler):
 
         result = await self.api.get_flows(frameworkToken=token, flow_type=flow_type, page=page)
         if not self.is_success(result):
-            yield self.chain_reply(event, f"获取流水记录失败：{result.get('msg', '未知错误')}")
+            yield self.chain_reply(event, f"获取流水记录失败：{self.get_error_msg(result)}")
             return
 
         data = result.get("data", [])
@@ -393,7 +393,7 @@ class DataHandler(BaseHandler):
 
         result = await self.api.get_record(frameworkToken=token, mode_type=mode_type, page=page)
         if not self.is_success(result):
-            yield self.chain_reply(event, f"获取战绩记录失败：{result.get('msg', '未知错误')}")
+            yield self.chain_reply(event, f"获取战绩记录失败：{self.get_error_msg(result)}")
             return
 
         data = result.get("data", {})
@@ -472,7 +472,7 @@ class DataHandler(BaseHandler):
 
         result = await self.api.get_collection(frameworkToken=token)
         if not self.is_success(result):
-            yield self.chain_reply(event, f"获取藏品信息失败：{result.get('msg', '未知错误')}")
+            yield self.chain_reply(event, f"获取藏品信息失败：{self.get_error_msg(result)}")
             return
 
         data = result.get("data", {})
@@ -570,7 +570,7 @@ class DataHandler(BaseHandler):
 
         result = await self.api.get_operators()
         if not self.is_success(result):
-            yield self.chain_reply(event, f"获取干员信息失败：{result.get('msg', '未知错误')}")
+            yield self.chain_reply(event, f"获取干员信息失败：{self.get_error_msg(result)}")
             return
 
         operators = result.get("data", [])

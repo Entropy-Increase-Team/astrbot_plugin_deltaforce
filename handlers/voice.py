@@ -41,7 +41,7 @@ class VoiceHandler(BaseHandler):
                 result = await self.api.get_random_audio()
 
             if not self.is_success(result):
-                yield self.chain_reply(event, f"❌ 获取语音失败：{result.get('msg', '未知错误')}")
+                yield self.chain_reply(event, f"❌ 获取语音失败：{self.get_error_msg(result)}")
                 return
 
             audios = result.get("data", {}).get("audios", [])
@@ -107,7 +107,7 @@ class VoiceHandler(BaseHandler):
         """获取角色列表"""
         result = await self.api.get_audio_characters()
         if not self.is_success(result):
-            yield self.chain_reply(event, f"❌ 获取失败：{result.get('msg', '未知错误')}")
+            yield self.chain_reply(event, f"❌ 获取失败：{self.get_error_msg(result)}")
             return
 
         characters = result.get("data", [])
@@ -133,7 +133,7 @@ class VoiceHandler(BaseHandler):
         """获取标签列表"""
         result = await self.api.get_audio_tags()
         if not self.is_success(result):
-            yield self.chain_reply(event, f"❌ 获取失败：{result.get('msg', '未知错误')}")
+            yield self.chain_reply(event, f"❌ 获取失败：{self.get_error_msg(result)}")
             return
 
         tags = result.get("data", [])
@@ -156,7 +156,7 @@ class VoiceHandler(BaseHandler):
         """获取分类列表"""
         result = await self.api.get_audio_categories()
         if not self.is_success(result):
-            yield self.chain_reply(event, f"❌ 获取失败：{result.get('msg', '未知错误')}")
+            yield self.chain_reply(event, f"❌ 获取失败：{self.get_error_msg(result)}")
             return
 
         categories = result.get("data", [])
@@ -179,7 +179,7 @@ class VoiceHandler(BaseHandler):
         """获取语音统计"""
         result = await self.api.get_audio_stats()
         if not self.is_success(result):
-            yield self.chain_reply(event, f"❌ 获取失败：{result.get('msg', '未知错误')}")
+            yield self.chain_reply(event, f"❌ 获取失败：{self.get_error_msg(result)}")
             return
 
         data = result.get("data", {})

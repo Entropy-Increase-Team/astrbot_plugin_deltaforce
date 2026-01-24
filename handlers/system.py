@@ -273,11 +273,11 @@ class SystemHandler(BaseHandler):
             subscription_type=subscription_type
         )
 
-        if result.get("success", False) or self.is_success(result):
+        if self.is_success(result):
             type_names = {"sol": "烽火地带", "mp": "全面战场", "both": "全部模式"}
             yield self.chain_reply(event, f"✅ 战绩订阅成功！\n订阅类型：{type_names.get(subscription_type, subscription_type)}\n\n战绩将在对局结束后自动推送")
         else:
-            yield self.chain_reply(event, f"❌ 订阅失败：{result.get('message', result.get('msg', '未知错误'))}")
+            yield self.chain_reply(event, f"❌ 订阅失败：{self.get_error_msg(result)}")
 
     async def unsubscribe_record(self, event: AstrMessageEvent):
         """取消订阅战绩"""
@@ -286,10 +286,10 @@ class SystemHandler(BaseHandler):
             client_id=self.api.clientid
         )
 
-        if result.get("success", False) or self.is_success(result):
+        if self.is_success(result):
             yield self.chain_reply(event, "✅ 已取消战绩订阅")
         else:
-            yield self.chain_reply(event, f"❌ 取消订阅失败：{result.get('message', result.get('msg', '未知错误'))}")
+            yield self.chain_reply(event, f"❌ 取消订阅失败：{self.get_error_msg(result)}")
 
     async def get_subscription_status(self, event: AstrMessageEvent):
         """查询订阅状态"""
@@ -298,8 +298,8 @@ class SystemHandler(BaseHandler):
             client_id=self.api.clientid
         )
 
-        if not result.get("success", False) and not self.is_success(result):
-            yield self.chain_reply(event, f"❌ 查询失败：{result.get('message', result.get('msg', '未知错误'))}")
+        if not self.is_success(result):
+            yield self.chain_reply(event, f"❌ 查询失败：{self.get_error_msg(result)}")
             return
 
         data = result.get("data", {})

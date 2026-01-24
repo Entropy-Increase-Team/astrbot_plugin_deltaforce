@@ -61,8 +61,10 @@ class DailyKeywordPush:
         try:
             result = await self.api.get_daily_keyword()
             
-            if not result.get("success") and result.get("code") != 0:
-                logger.error(f"[三角洲] 获取每日密码失败: {result.get('msg', '未知错误')}")
+            # 支持两种响应格式: {"success": true} 或 {"code": 0}
+            is_success = result.get("success") == True or result.get("code") == 0
+            if not is_success:
+                logger.error(f"[三角洲] 获取每日密码失败: {result.get('msg') or result.get('message') or '未知错误'}")
                 return
             
             data = result.get("data", {})

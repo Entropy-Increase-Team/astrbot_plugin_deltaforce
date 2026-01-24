@@ -299,9 +299,9 @@ class DeltaForce(Star):
             yield result
 
     @filter.command("三角洲出红记录", alias={"洲出红记录", "三角洲红色记录", "三角洲红装记录"})
-    async def get_red_collection(self, event: AstrMessageEvent, args: str = ""):
+    async def get_red_collection(self, event: AstrMessageEvent):
         """查询出红记录"""
-        async for result in self.info_handler.get_red_collection(event, args):
+        async for result in self.info_handler.get_red_collection(event):
             yield result
 
     @filter.command("三角洲健康状态", alias={"洲健康状态", "三角洲游戏健康"})

@@ -57,7 +57,7 @@ class InfoHandler(BaseHandler):
         
         result = await self.api.get_money(frameworkToken=token)
         if not self.is_success(result):
-            yield self.chain_reply(event, f"获取货币信息失败：{result.get('msg', '未知错误')}")
+            yield self.chain_reply(event, f"获取货币信息失败：{self.get_error_msg(result)}")
             return
         
         data = result.get("data", [])
@@ -85,7 +85,7 @@ class InfoHandler(BaseHandler):
         
         result = await self.api.get_personal_info(frameworkToken=token)
         if not self.is_success(result):
-            yield self.chain_reply(event, f"获取个人信息失败：{result.get('msg', '未知错误')}")
+            yield self.chain_reply(event, f"获取个人信息失败：{self.get_error_msg(result)}")
             return
         
         data = result.get("data", {})
@@ -214,7 +214,7 @@ class InfoHandler(BaseHandler):
         
         result = await self.api.get_personal_info(frameworkToken=token)
         if not self.is_success(result):
-            yield self.chain_reply(event, f"获取UID失败：{result.get('msg', '未知错误')}")
+            yield self.chain_reply(event, f"获取UID失败：{self.get_error_msg(result)}")
             return
         
         role_info = result.get("roleInfo", {})
@@ -236,7 +236,7 @@ class InfoHandler(BaseHandler):
         
         result = await self.api.get_ban_history(frameworkToken=token)
         if not self.is_success(result):
-            yield self.chain_reply(event, f"获取违规历史失败：{result.get('msg', '未知错误')}")
+            yield self.chain_reply(event, f"获取违规历史失败：{self.get_error_msg(result)}")
             return
         
         ban_data = result.get("data", [])
@@ -314,7 +314,7 @@ class InfoHandler(BaseHandler):
         """干员列表查询"""
         result = await self.api.get_operators()
         if not self.is_success(result):
-            yield self.chain_reply(event, f"获取干员列表失败：{result.get('msg', '未知错误')}")
+            yield self.chain_reply(event, f"获取干员列表失败：{self.get_error_msg(result)}")
             return
 
         operators = result.get("data", [])
@@ -367,7 +367,7 @@ class InfoHandler(BaseHandler):
 
         result = await self.api.get_place_status(token)
         if not self.is_success(result):
-            yield self.chain_reply(event, f"获取特勤处状态失败：{result.get('msg', '未知错误')}")
+            yield self.chain_reply(event, f"获取特勤处状态失败：{self.get_error_msg(result)}")
             return
 
         data = result.get("data", {})
@@ -462,7 +462,7 @@ class InfoHandler(BaseHandler):
 
         result = await self.api.get_place_info(token, place_type if place_name.lower() != "all" else "")
         if not self.is_success(result):
-            yield self.chain_reply(event, f"获取特勤处信息失败：{result.get('msg', '未知错误')}")
+            yield self.chain_reply(event, f"获取特勤处信息失败：{self.get_error_msg(result)}")
             return
 
         data = result.get("data", {})
@@ -499,7 +499,7 @@ class InfoHandler(BaseHandler):
 
         result = await self.api.get_red_list(token)
         if not self.is_success(result):
-            yield self.chain_reply(event, f"获取出红记录失败：{result.get('msg', '未知错误')}")
+            yield self.chain_reply(event, f"获取出红记录失败：{self.get_error_msg(result)}")
             return
 
         data = result.get("data", {})
@@ -589,7 +589,7 @@ class InfoHandler(BaseHandler):
 
         result = await self.api.get_game_health(token)
         if not self.is_success(result):
-            yield self.chain_reply(event, f"获取健康状态失败：{result.get('msg', '未知错误')}")
+            yield self.chain_reply(event, f"获取健康状态失败：{self.get_error_msg(result)}")
             return
 
         data = result.get("data", [])
@@ -671,7 +671,7 @@ class InfoHandler(BaseHandler):
         # 此功能需要管理员权限，由调用方检查
         result = await self.api.get_user_stats()
         if not self.is_success(result):
-            yield self.chain_reply(event, f"获取统计失败：{result.get('msg', '未知错误')}")
+            yield self.chain_reply(event, f"获取统计失败：{self.get_error_msg(result)}")
             return
 
         access_level = result.get("accessLevel", "user")

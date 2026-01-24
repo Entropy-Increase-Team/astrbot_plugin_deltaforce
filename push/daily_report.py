@@ -112,8 +112,10 @@ class DailyReportPush:
             # 获取日报数据
             result = await self.api.get_daily_record(token, "", yesterday_str)
             
-            if not result.get("success") or not result.get("data"):
-                logger.warn(f"[日报推送] 用户 {platform_id} 获取日报失败: {result.get('msg', '未知错误')}")
+            # 支持两种响应格式: {"success": true} 或 {"code": 0}
+            is_success = result.get("success") == True or result.get("code") == 0
+            if not is_success or not result.get("data"):
+                logger.warn(f"[日报推送] 用户 {platform_id} 获取日报失败: {result.get('msg') or result.get('message') or '未知错误'}")
                 return
             
             data = result.get("data", {})

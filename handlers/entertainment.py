@@ -18,7 +18,7 @@ class EntertainmentHandler(BaseHandler):
         try:
             result = await self.api.get_tts_health()
             
-            if not result or not result.get("success", False):
+            if not result or not self.is_success(result):
                 yield self.chain_reply(event, "❌ TTS服务异常，请稍后重试")
                 return
 
@@ -48,7 +48,7 @@ class EntertainmentHandler(BaseHandler):
             result = await self.api.get_tts_presets()
             
             if not self.is_success(result):
-                yield self.chain_reply(event, f"❌ 获取失败：{result.get('msg', result.get('message', '未知错误'))}")
+                yield self.chain_reply(event, f"❌ 获取失败：{self.get_error_msg(result)}")
                 return
 
             presets = result.get("data", [])
@@ -87,7 +87,7 @@ class EntertainmentHandler(BaseHandler):
             result = await self.api.get_tts_preset_detail(character_id)
             
             if not self.is_success(result):
-                yield self.chain_reply(event, f"❌ 获取失败：{result.get('msg', result.get('message', '未知错误'))}")
+                yield self.chain_reply(event, f"❌ 获取失败：{self.get_error_msg(result)}")
                 return
 
             data = result.get("data", {})
@@ -160,7 +160,7 @@ class EntertainmentHandler(BaseHandler):
             result = await self.api.tts_synthesize(text, character, emotion)
             
             if not self.is_success(result):
-                yield self.chain_reply(event, f"❌ 合成失败：{result.get('msg', result.get('message', '未知错误'))}")
+                yield self.chain_reply(event, f"❌ 合成失败：{self.get_error_msg(result)}")
                 return
 
             task_id = result.get("data", {}).get("taskId") or result.get("taskId")
@@ -215,7 +215,7 @@ class EntertainmentHandler(BaseHandler):
             result = await self.api.get_ai_presets()
             
             if not self.is_success(result):
-                yield self.chain_reply(event, f"❌ 获取失败：{result.get('msg', result.get('message', '未知错误'))}")
+                yield self.chain_reply(event, f"❌ 获取失败：{self.get_error_msg(result)}")
                 return
 
             presets = result.get("data", [])
@@ -280,7 +280,7 @@ class EntertainmentHandler(BaseHandler):
             result = await self.api.get_ai_commentary(token, mode_type, preset)
 
             if not result or not self.is_success(result):
-                yield self.chain_reply(event, f"❌ AI锐评失败：{result.get('msg', result.get('message', '请求失败')) if result else '无响应'}")
+                yield self.chain_reply(event, f"❌ AI锐评失败：{self.get_error_msg(result) if result else '无响应'}")
                 return
 
             data = result.get("data", "")
@@ -338,7 +338,7 @@ class EntertainmentHandler(BaseHandler):
             result = await self.api.get_daily_record(token, "", date_str)
 
             if not self.is_success(result):
-                yield self.chain_reply(event, f"❌ 获取日报失败：{result.get('msg', result.get('message', '未知错误'))}")
+                yield self.chain_reply(event, f"❌ 获取日报失败：{self.get_error_msg(result)}")
                 return
 
             data = result.get("data", {})
@@ -399,7 +399,7 @@ class EntertainmentHandler(BaseHandler):
             result = await self.api.get_daily_record(token, "", yesterday_str)
 
             if not self.is_success(result):
-                yield self.chain_reply(event, f"❌ 获取失败：{result.get('msg', result.get('message', '未知错误'))}")
+                yield self.chain_reply(event, f"❌ 获取失败：{self.get_error_msg(result)}")
                 return
 
             data = result.get("data", {})
@@ -444,7 +444,7 @@ class EntertainmentHandler(BaseHandler):
             result = await self.api.get_weekly_record(token, "", True)
 
             if not self.is_success(result):
-                yield self.chain_reply(event, f"❌ 获取周报失败：{result.get('msg', result.get('message', '未知错误'))}")
+                yield self.chain_reply(event, f"❌ 获取周报失败：{self.get_error_msg(result)}")
                 return
 
             data = result.get("data", {})

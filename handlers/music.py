@@ -28,7 +28,7 @@ class MusicHandler(BaseHandler):
             result = await self.api.get_shushu_music(artist=artist, name=name, playlist=playlist)
             
             if not self.is_success(result):
-                yield self.chain_reply(event, f"❌ 获取音乐失败：{result.get('msg', '未知错误')}")
+                yield self.chain_reply(event, f"❌ 获取音乐失败：{self.get_error_msg(result)}")
                 return
 
             musics = result.get("data", {}).get("musics", [])
@@ -73,7 +73,7 @@ class MusicHandler(BaseHandler):
             result = await self.api.get_shushu_music_list(sort_by=sort_by, playlist=playlist)
             
             if not self.is_success(result):
-                yield self.chain_reply(event, f"❌ 获取音乐列表失败：{result.get('msg', '未知错误')}")
+                yield self.chain_reply(event, f"❌ 获取音乐列表失败：{self.get_error_msg(result)}")
                 return
 
             musics = result.get("data", {}).get("musics", [])
@@ -145,7 +145,7 @@ width=1200,
             result = await self.api.get_shushu_music_list(playlist=playlist_name)
             
             if not self.is_success(result):
-                yield self.chain_reply(event, f"❌ 获取歌单失败：{result.get('msg', '未知错误')}")
+                yield self.chain_reply(event, f"❌ 获取歌单失败：{self.get_error_msg(result)}")
                 return
 
             musics = result.get("data", {}).get("musics", [])

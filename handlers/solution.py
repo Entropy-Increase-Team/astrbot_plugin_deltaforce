@@ -52,7 +52,7 @@ class SolutionHandler(BaseHandler):
             )
             
             if not self.is_success(result):
-                yield self.chain_reply(event, f"❌ 上传失败：{result.get('msg', '未知错误')}")
+                yield self.chain_reply(event, f"❌ 上传失败：{self.get_error_msg(result)}")
                 return
 
             solution_data = result.get("data", {})
@@ -103,7 +103,7 @@ class SolutionHandler(BaseHandler):
             )
             
             if not self.is_success(result):
-                yield self.chain_reply(event, f"❌ 获取列表失败：{result.get('msg', '未知错误')}")
+                yield self.chain_reply(event, f"❌ 获取列表失败：{self.get_error_msg(result)}")
                 return
 
             solutions = result.get("data", {}).get("solutions", [])
@@ -152,7 +152,7 @@ class SolutionHandler(BaseHandler):
             result = await self.api.get_solution_detail(token, platform_id, solution_id)
             
             if not self.is_success(result):
-                yield self.chain_reply(event, f"❌ 获取详情失败：{result.get('msg', '未知错误')}")
+                yield self.chain_reply(event, f"❌ 获取详情失败：{self.get_error_msg(result)}")
                 return
 
             sol = result.get("data", {})
@@ -212,7 +212,7 @@ class SolutionHandler(BaseHandler):
             result = await self.api.vote_solution(token, platform_id, solution_id, vote_type)
             
             if not self.is_success(result):
-                yield self.chain_reply(event, f"❌ 投票失败：{result.get('msg', '未知错误')}")
+                yield self.chain_reply(event, f"❌ 投票失败：{self.get_error_msg(result)}")
                 return
 
             action = "点赞" if vote_type == "like" else "点踩"
@@ -237,7 +237,7 @@ class SolutionHandler(BaseHandler):
             result = await self.api.delete_solution(token, platform_id, solution_id)
             
             if not self.is_success(result):
-                yield self.chain_reply(event, f"❌ 删除失败：{result.get('msg', '未知错误')}")
+                yield self.chain_reply(event, f"❌ 删除失败：{self.get_error_msg(result)}")
                 return
 
             yield self.chain_reply(event, f"✅ 已删除方案 #{solution_id}")
@@ -267,7 +267,7 @@ class SolutionHandler(BaseHandler):
                 action_text = "取消收藏"
             
             if not self.is_success(result):
-                yield self.chain_reply(event, f"❌ {action_text}失败：{result.get('msg', '未知错误')}")
+                yield self.chain_reply(event, f"❌ {action_text}失败：{self.get_error_msg(result)}")
                 return
 
             yield self.chain_reply(event, f"✅ 已{action_text}方案 #{solution_id}")
@@ -287,7 +287,7 @@ class SolutionHandler(BaseHandler):
             result = await self.api.get_collect_list(token, platform_id)
             
             if not self.is_success(result):
-                yield self.chain_reply(event, f"❌ 获取收藏列表失败：{result.get('msg', '未知错误')}")
+                yield self.chain_reply(event, f"❌ 获取收藏列表失败：{self.get_error_msg(result)}")
                 return
 
             solutions = result.get("data", {}).get("solutions", [])

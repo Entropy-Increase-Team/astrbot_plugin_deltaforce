@@ -16,8 +16,25 @@ class BaseHandler:
         self.db_manager = db_manager
     
     def is_success(self, response: dict) -> bool:
-        """判断接口请求是否成功"""
-        return response.get("code", -1) == 0
+        """判断接口请求是否成功
+        支持两种响应格式：
+        1. {"code": 0, ...} - 旧格式
+        2. {"success": true, ...} - 新格式
+        """
+        # 先检查 success 字段（新格式）
+        if "success" in response:
+            return response.get("success", False) == True
+        # 检查 code 字段（旧格式，code 可能是数字或字符串）
+        code = response.get("code", -1)
+        if isinstance(code, str):
+            return code == "0" or code.upper() == "SUCCESS"
+        return code == 0
+
+    def get_error_msg(self, response: dict, default: str = "未知错误") -> str:
+        """从响应中获取错误消息
+        支持多种字段名：msg, message, error
+        """
+        return response.get("msg") or response.get("message") or response.get("error") or default
 
     def chain_reply(self, event: AstrMessageEvent, raw_text: str = None, components: list = None):
         """发送消息链的辅助方法"""
@@ -33,7 +50,7 @@ class BaseHandler:
         """获取当前用户激活的 token"""
         result_list = await self.api.user_acc_list(platformId=event.get_sender_id())
         if not self.is_success(result_list):
-            return None, f"获取账号列表失败：{result_list.get('msg', '未知错误')}"
+            return None, f"获取账号列表失败：{self.get_error_msg(result_list)}"
         
         accounts = result_list.get("data", [])
         if not accounts:
@@ -61,7 +78,7 @@ class BaseHandler:
         """获取QQ安全中心账号的 token"""
         result_list = await self.api.user_acc_list(platformId=event.get_sender_id())
         if not self.is_success(result_list):
-            return None, f"获取账号列表失败：{result_list.get('msg', '未知错误')}"
+            return None, f"获取账号列表失败：{self.get_error_msg(result_list)}"
         
         accounts = result_list.get("data", [])
         if not accounts:
