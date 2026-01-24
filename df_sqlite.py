@@ -1,27 +1,34 @@
 import aiosqlite, os, json
+from pathlib import Path
 from astrbot.api import logger
 from typing import Dict, List, Any, Optional
 
 class DeltaForceSQLiteManager:
     def __init__(self, db_path=None):
-        self.plugin_dir = os.path.dirname(os.path.abspath(__file__))
         if not db_path:
-            self.db_path = os.path.join(self.plugin_dir, 'df.db')
+            # 使用推荐的数据存储路径
+            self.data_dir = Path("data/plugin_data/astrbot_plugin_deltaforce")
+            self.data_dir.mkdir(parents=True, exist_ok=True)
+            self.db_path = self.data_dir / "users.db"
         else:
-            self.db_path = db_path
+            self.db_path = Path(db_path)
 
     async def initialize_table(self):
         """初始化数据库表"""
         try:
             async with aiosqlite.connect(self.db_path) as conn:
-                # 用户数据表
+                # 1. 用户数据表 (按照推荐 schema: user_id, data, updated_at)
+                # 使用 JSON blob 存储数据
                 await conn.execute('''
-                CREATE TABLE IF NOT EXISTS user_data (
-                    user INTEGER PRIMARY KEY NOT NULL,
-                    selection INTEGER NOT NULL,
-                    token TEXT(36)
+                CREATE TABLE IF NOT EXISTS users (
+                    user_id TEXT PRIMARY KEY,
+                    data TEXT,
+                    updated_at INTEGER
                 )
                 ''')
+                
+                # 兼容旧代码，不建议使用，这里保留是为了避免重写 place_push_subscriptions 和 broadcast_history
+                # 如果完全迁移，应将这些表也迁移到 users 表的 data 字段中，但为了稳定性，暂且保留独立表
                 
                 # 特勤处推送订阅表
                 await conn.execute('''
@@ -48,43 +55,87 @@ class DeltaForceSQLiteManager:
                 ''')
                 
                 await conn.commit()
-                logger.info("数据库表初始化成功")
+                logger.info(f"数据库初始化成功: {self.db_path}")
                 return True
         except Exception as e:
-            logger.error(f"数据库表初始化失败: {e}")
+            logger.error(f"数据库初始化失败: {e}")
             return False
     
     async def upsert_user(self, user: int, selection: int, token: str = None) -> bool:
-        """异步插入或更新用户数据"""
+        """
+        异步插入或更新用户数据
+        使用新的 users 表结构存储
+        """
         try:
+            user_id = str(user)
+            import time
+            current_time = int(time.time())
+            
+            # 读取旧数据（如果只是更新selection）
+            # 由于 upsert_user 参数没有包含所有可能的 data 字段，我们需要先读取
+            # 但这里我们主要存储 selection 和 token
+            
+            # 使用 upsert 语法
+            data_dict = {"selection": selection}
+            if token:
+                data_dict["token"] = token
+            
             async with aiosqlite.connect(self.db_path) as conn:
-                if token:
-                    await conn.execute(
-                        "INSERT OR REPLACE INTO user_data (user, selection, token) VALUES (?, ?, ?)",
-                        (user, selection, token)
-                    )
-                else:
-                    await conn.execute(
-                        "INSERT OR REPLACE INTO user_data (user, selection) VALUES (?, ?)",
-                        (user, selection)
-                    )
+                # 先尝试读取现有数据，以合并而不是覆盖（如果未来有更多字段）
+                cursor = await conn.execute("SELECT data FROM users WHERE user_id=?", (user_id,))
+                row = await cursor.fetchone()
+                
+                existing_data = {}
+                if row and row[0]:
+                    try:
+                        existing_data = json.loads(row[0])
+                    except:
+                        pass
+                
+                # 合并数据
+                existing_data.update(data_dict)
+                final_json = json.dumps(existing_data)
+                
+                await conn.execute("""
+                INSERT INTO users (user_id, data, updated_at)
+                VALUES (?, ?, ?)
+                ON CONFLICT(user_id) DO UPDATE SET
+                    data=excluded.data,
+                    updated_at=excluded.updated_at
+                """, (user_id, final_json, current_time))
+                
                 await conn.commit()
                 logger.info(f"用户 {user} 数据保存成功")
                 return True
         except Exception as e:
-            logger.error(f"数据库错误: {e}")
+            logger.error(f"数据库错误 (upsert_user): {e}")
             return False
     
     async def get_user(self, user: int) -> tuple:
-        """异步查询用户数据"""
+        """
+        异步查询用户数据
+        从 data JSON 中提取 selection 和 token
+        返回: (selection, token)
+        """
         try:
+            user_id = str(user)
             async with aiosqlite.connect(self.db_path) as conn:
                 cursor = await conn.execute(
-                    "SELECT selection, token FROM user_data WHERE user = ?",
-                    (user,)
+                    "SELECT data FROM users WHERE user_id = ?",
+                    (user_id,)
                 )
-                result = await cursor.fetchone()
-                return result
+                row = await cursor.fetchone()
+                
+                if row and row[0]:
+                    try:
+                        data = json.loads(row[0])
+                        selection = data.get("selection", 0)
+                        token = data.get("token")
+                        return (selection, token)
+                    except Exception as e:
+                        logger.error(f"解析用户数据失败: {e}")
+                        return None
+                return None
         except Exception as e:
             logger.error(f"查询错误: {e}")
             return None
@@ -92,8 +143,9 @@ class DeltaForceSQLiteManager:
     async def delete_user(self, user: int) -> bool:
         """删除用户数据"""
         try:
+            user_id = str(user)
             async with aiosqlite.connect(self.db_path) as conn:
-                await conn.execute("DELETE FROM user_data WHERE user = ?", (user,))
+                await conn.execute("DELETE FROM users WHERE user_id = ?", (user_id,))
                 await conn.commit()
                 logger.info(f"用户 {user} 数据删除成功")
                 return True

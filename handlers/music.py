@@ -92,20 +92,20 @@ class MusicHandler(BaseHandler):
             processed_musics = []
             for i, music in enumerate(page_musics, start + 1):
                 processed_musics.append({
-                    'rank': i,
-                    'title': music.get("title") or music.get("name", "未知"),
+                    'index': i,
+                    'name': music.get("title") or music.get("name", "未知"),
                     'artist': music.get("artist", "未知"),
-                    'playCount': music.get("playCount", 0),
                     'cover': music.get("cover", ""),
+                    'hot': f"{music.get('playCount', 0):,}" if music.get("playCount") else None,
+                    'playlist': music.get("playlist", ""),
                 })
 
             render_data = {
                 'backgroundImage': Render.get_background_image(),
-                'sortBy': '热门' if sort_by == 'hot' else '默认',
-                'currentPage': page,
-                'totalPages': total_pages,
-                'musics': processed_musics,
-                'totalMusics': len(musics),
+                'listTitle': '鼠鼠音乐排行榜' if sort_by == 'hot' else '鼠鼠音乐列表',
+                'subtitle': f"第 {page}/{total_pages} 页",
+                'totalCount': len(musics),
+                'musicList': processed_musics,
             }
 
             # 尝试渲染图片

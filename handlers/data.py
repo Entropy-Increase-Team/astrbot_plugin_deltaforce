@@ -217,15 +217,25 @@ class DataHandler(BaseHandler):
             }
             render_data['totalCount'] = len(login_arr)
             
-            # 处理登录列
-            login_columns = []
-            for record in login_arr[:20]:
-                login_columns.append({
-                    'loginTime': record.get('indtEventTime', '未知'),
-                    'logoutTime': record.get('outdtEventTime', '未知'),
-                    'ip': record.get('vClientIP', '未知'),
-                    'device': record.get('SystemHardware', '未知'),
+            # 处理登录列 - 分成5列显示
+            login_records = []
+            for idx, record in enumerate(login_arr[:20], 1):
+                login_records.append({
+                    'index': idx,
+                    'indtEventTime': record.get('indtEventTime', '未知'),
+                    'outdtEventTime': record.get('outdtEventTime', '未知'),
+                    'vClientIP': record.get('vClientIP', '未知'),
+                    'SystemHardware': record.get('SystemHardware', '未知'),
                 })
+            # 将记录分成5列
+            columns_count = 5
+            items_per_column = (len(login_records) + columns_count - 1) // columns_count
+            login_columns = []
+            for i in range(columns_count):
+                start = i * items_per_column
+                end = start + items_per_column
+                if start < len(login_records):
+                    login_columns.append(login_records[start:end])
             render_data['loginColumns'] = login_columns
             
             # 统计设备和IP
@@ -243,29 +253,52 @@ class DataHandler(BaseHandler):
         elif flow_type == 2:
             # 道具记录
             item_arr = first_data.get("itemArr", [])
-            flow_items = []
-            for record in item_arr[:20]:
-                flow_items.append({
-                    'reason': self.decode_url(record.get("vReason", "")),
-                    'itemId': record.get('iItemID', '未知'),
-                    'count': record.get('iCount', 0),
-                    'time': record.get('dtEventTime', '未知'),
+            item_records = []
+            for idx, record in enumerate(item_arr[:20], 1):
+                count = record.get('iCount', 0)
+                item_records.append({
+                    'index': idx,
+                    'dtEventTime': record.get('dtEventTime', '未知'),
+                    'Name': record.get('iItemID', '未知'),
+                    'Reason': self.decode_url(record.get("vReason", "")),
+                    'changeType': 'positive' if count >= 0 else 'negative',
+                    'AddOrReduce': f"+{count}" if count >= 0 else str(count),
                 })
-            render_data['flowItems'] = flow_items
+            # 将记录分成5列
+            columns_count = 5
+            items_per_column = (len(item_records) + columns_count - 1) // columns_count
+            item_columns = []
+            for i in range(columns_count):
+                start = i * items_per_column
+                end = start + items_per_column
+                if start < len(item_records):
+                    item_columns.append(item_records[start:end])
+            render_data['itemColumns'] = item_columns
 
         elif flow_type == 3:
             # 货币记录
             money_arr = first_data.get("iMoneyArr", [])
-            flow_items = []
-            for record in money_arr[:20]:
-                flow_items.append({
-                    'reason': self.decode_url(record.get("vReason", "")),
-                    'moneyType': record.get('iMoneyType', '未知'),
-                    'change': record.get('iChange', 0),
-                    'balance': record.get('iMoney', 0),
-                    'time': record.get('dtEventTime', '未知'),
+            money_records = []
+            for idx, record in enumerate(money_arr[:20], 1):
+                change = record.get('iChange', 0)
+                money_records.append({
+                    'index': idx,
+                    'dtEventTime': record.get('dtEventTime', '未知'),
+                    'Reason': self.decode_url(record.get("vReason", "")),
+                    'changeType': 'positive' if change >= 0 else 'negative',
+                    'AddOrReduce': f"+{change}" if change >= 0 else str(change),
+                    'leftMoney': record.get('iMoney', 0),
                 })
-            render_data['flowItems'] = flow_items
+            # 将记录分成5列
+            columns_count = 5
+            items_per_column = (len(money_records) + columns_count - 1) // columns_count
+            money_columns = []
+            for i in range(columns_count):
+                start = i * items_per_column
+                end = start + items_per_column
+                if start < len(money_records):
+                    money_columns.append(money_records[start:end])
+            render_data['moneyColumns'] = money_columns
 
         yield await self.render_and_reply(
             event,
@@ -452,13 +485,50 @@ class DataHandler(BaseHandler):
         red_count = data.get("redCount", 0)
         collections = data.get("list", [])
 
+        # 品质等级映射
+        quality_map = {
+            '传说': 5, '史诗': 4, '稀有': 3, '精良': 2, '普通': 1,
+            'legendary': 5, 'epic': 4, 'rare': 3, 'uncommon': 2, 'common': 1
+        }
+        
+        # 按类别分组藏品
+        categories_dict = {}
+        quality_stats = {'5': 0, '4': 0, '3': 0, '2': 0, '1': 0}
+        
+        for item in collections[:50]:  # 限制数量
+            category_name = item.get("category", "其他") or "其他"
+            rarity = item.get("rarity", "普通") or "普通"
+            quality_level = quality_map.get(rarity.lower(), quality_map.get(rarity, 1))
+            quality_stats[str(quality_level)] = quality_stats.get(str(quality_level), 0) + 1
+            
+            if category_name not in categories_dict:
+                categories_dict[category_name] = {
+                    'name': category_name,
+                    'bgImage': 'default',
+                    'items': []
+                }
+            
+            categories_dict[category_name]['items'].append({
+                'id': item.get("id", ""),
+                'name': item.get("name", "未知"),
+                'imageUrl': item.get("imageUrl", ""),
+                'qualityLevel': quality_level,
+                'category': category_name,
+            })
+        
+        # 转换为列表格式
+        categories = list(categories_dict.values())
+        quality_stats_list = [
+            {'level': k, 'count': v} for k, v in quality_stats.items() if v > 0
+        ]
+
         render_data = {
             'backgroundImage': Render.get_background_image(),
             'totalCount': total_count,
+            'typeName': '全部藏品',
+            'categories': categories,
+            'qualityStats': quality_stats_list,
             'redCount': red_count,
-            'collections': collections[:20],  # 限制显示数量
-            'hasMore': len(collections) > 20,
-            'totalItems': len(collections),
         }
 
         # 尝试渲染图片
@@ -531,7 +601,7 @@ class DataHandler(BaseHandler):
 
             # 准备渲染数据
             render_data = {
-                'backgroundImage': Render.get_background_image(),
+                'operatorPic': operator.get('avatar', '') or operator.get('operatorPic', ''),
                 'operator': operator,
                 'operatorName': operator.get('operator', '未知'),
                 'fullName': operator.get('fullName', '未知'),

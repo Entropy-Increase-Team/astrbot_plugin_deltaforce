@@ -490,15 +490,20 @@ class ToolsHandler(BaseHandler):
                 profit = map_data.get("a1", 0)
                 
                 try:
-                    escape_rate = f"{(int(escaped) / int(total_games) * 100):.1f}%" if total_games and int(total_games) > 0 else "0%"
+                    total_int = int(total_games) if total_games else 0
+                    escaped_int = int(escaped) if escaped else 0
+                    escape_rate = f"{(escaped_int / total_int * 100):.1f}%" if total_int > 0 else "0%"
+                    failed = total_int - escaped_int
                 except:
                     escape_rate = "0%"
+                    failed = 0
                 
                 stat_item['sol'] = {
                     'totalGames': total_games,
                     'escaped': escaped,
                     'escapeRate': escape_rate,
-                    'kills': kills,
+                    'kill': kills,  # 模板期望 kill 而不是 kills
+                    'failed': failed,
                     'profit': self.format_profit(profit),
                 }
             else:
@@ -516,10 +521,10 @@ class ToolsHandler(BaseHandler):
                 
                 stat_item['mp'] = {
                     'totalGames': total_games,
-                    'wins': wins,
+                    'win': wins,  # 模板期望 win 而不是 wins
                     'winRate': win_rate,
-                    'kills': kills,
-                    'deaths': deaths,
+                    'kill': kills,  # 模板期望 kill 而不是 kills
+                    'death': deaths,  # 模板期望 death 而不是 deaths
                     'kd': kd,
                 }
             
@@ -559,11 +564,11 @@ class ToolsHandler(BaseHandler):
             if mode == "sol" and item.get('sol'):
                 sol = item['sol']
                 output_lines.append(f"  对局: {sol['totalGames']} | 撤离: {sol['escaped']} ({sol['escapeRate']})")
-                output_lines.append(f"  击杀: {sol['kills']} | 收益: {sol['profit']}")
+                output_lines.append(f"  击杀: {sol['kill']} | 收益: {sol['profit']}")
             elif mode == "mp" and item.get('mp'):
                 mp = item['mp']
-                output_lines.append(f"  对局: {mp['totalGames']} | 胜场: {mp['wins']} ({mp['winRate']})")
-                output_lines.append(f"  击杀: {mp['kills']} | 死亡: {mp['deaths']} | KD: {mp['kd']}")
+                output_lines.append(f"  对局: {mp['totalGames']} | 胜场: {mp['win']} ({mp['winRate']})")
+                output_lines.append(f"  击杀: {mp['kill']} | 死亡: {mp['death']} | KD: {mp['kd']}")
 
         if len(map_stats_list) > 10:
             output_lines.append(f"\n... 共 {len(map_stats_list)} 张地图")
