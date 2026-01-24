@@ -65,7 +65,7 @@ class SystemHandler(BaseHandler):
         right_groups = self._process_groups(help_list.get("right", []))
 
         # Background logic
-        bg_path = Render.RESOURCES_PATH / "imgs" / "background" / "bg2-1.webp"
+        bg_path = Render.RESOURCES_PATH / "help" / "imgs" / "default" / "bg.jpg"
         bg_uri = bg_path.as_uri()
         
         # Icon Sprite Logic
@@ -107,7 +107,7 @@ class SystemHandler(BaseHandler):
             render_data,
             fallback_text=self._build_help_text(),
             width=1000,
-            height=3000
+            height=4000
         )
 
     def _build_help_text(self):

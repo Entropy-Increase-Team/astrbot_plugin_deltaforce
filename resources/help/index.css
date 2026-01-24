@@ -54,6 +54,7 @@ body {
 .help-table .th {
   font-size: 14px;
   display: table-cell;
+  width: 50%;
   box-shadow: 0 0 1px 0 #888 inset;
   padding: 12px 0 12px 50px;
   line-height: 24px;

@@ -17,7 +17,7 @@
       <div class="help-group">{{ group.group }}</div>
       {% if list_len > 0 %}
         <div class="help-table">
-            {% for batch in group.list | batch(1) %}
+            {% for batch in group.list | batch(helpCfg.colCount | default(2)) %}
             <div class="tr">
                 {% for help in batch %}
                 <div class="td">
