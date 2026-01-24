@@ -29,7 +29,7 @@ except ImportError:
 
 
 @register(
-    "delta_force_plugin",
+    "astrbot_plugin_deltaforce",
     "EntropyIncrease",
     "三角洲行动 AstrBot 插件",
     "v0.2.0",

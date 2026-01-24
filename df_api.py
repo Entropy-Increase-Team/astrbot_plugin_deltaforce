@@ -15,7 +15,14 @@ class DeltaForceAPI():
                 headers=headers, 
                 params=params
             ) as response:
-                return await response.json()
+                if response.status != 200:
+                    text = await response.text()
+                    return {"code": response.status, "msg": text, "data": None}
+                try:
+                    return await response.json()
+                except (aiohttp.ContentTypeError, json.JSONDecodeError):
+                    text = await response.text()
+                    return {"code": response.status, "msg": f"响应格式错误: {text}", "data": None}
     
     async def req_post(self, url, json=None, data=None):
         headers = {"Authorization": f"Bearer {self.token}"}
@@ -26,7 +33,14 @@ class DeltaForceAPI():
                 json=json,
                 data=data
             ) as response:
-                return await response.json()
+                if response.status != 200:
+                    text = await response.text()
+                    return {"code": response.status, "msg": text, "data": None}
+                try:
+                    return await response.json()
+                except (aiohttp.ContentTypeError, json.JSONDecodeError):
+                    text = await response.text()
+                    return {"code": response.status, "msg": f"响应格式错误: {text}", "data": None}
 
     ################################################################
     async def user_bind(self, platformId:str, frameworkToken:str):
