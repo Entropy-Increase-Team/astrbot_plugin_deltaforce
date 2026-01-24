@@ -32,7 +32,7 @@ except ImportError:
     "astrbot_plugin_deltaforce",
     "EntropyIncrease",
     "三角洲行动 AstrBot 插件",
-    "v0.2.0",
+    "0.2.0",
     "https://github.com/Entropy-Increase-Team/astrbot_plugin_deltaforce",
 )
 class DeltaForce(Star):
@@ -43,31 +43,39 @@ class DeltaForce(Star):
         self.token = config.get("token", "")
         self.clientid = config.get("clientid", "")
         
-        # 初始化 API 和数据库
-        self.api = DeltaForceAPI(self.token, self.clientid)
-        self.db_manager = DeltaForceSQLiteManager()
-        
-        # 初始化各处理器
-        self.info_handler = InfoHandler(self.api, self.db_manager)
-        self.account_handler = AccountHandler(self.api, self.db_manager)
-        self.data_handler = DataHandler(self.api, self.db_manager)
-        self.tools_handler = ToolsHandler(self.api, self.db_manager)
-        self.system_handler = SystemHandler(self.api, self.db_manager)
-        self.entertainment_handler = EntertainmentHandler(self.api, self.db_manager)
-        self.voice_handler = VoiceHandler(self.api, self.db_manager)
-        self.music_handler = MusicHandler(self.api, self.db_manager)
-        self.room_handler = RoomHandler(self.api, self.db_manager)
-        self.solution_handler = SolutionHandler(self.api, self.db_manager)
-        self.calculator_handler = CalculatorHandler(self.api, self.db_manager)
-        
-        # 推送模块 (可选)
-        self.scheduler = None
-        self.daily_keyword_push = None
-        self.daily_report_push = None
-        self.weekly_report_push = None
-        self.place_task_push = None
-        self.broadcast_system = None
-        self.push_handler = None
+        try:
+            # 初始化 API 和数据库
+            self.api = DeltaForceAPI(self.token, self.clientid)
+            self.db_manager = DeltaForceSQLiteManager()
+            
+            # 初始化各处理器
+            self.info_handler = InfoHandler(self.api, self.db_manager)
+            self.account_handler = AccountHandler(self.api, self.db_manager)
+            self.data_handler = DataHandler(self.api, self.db_manager)
+            self.tools_handler = ToolsHandler(self.api, self.db_manager)
+            self.system_handler = SystemHandler(self.api, self.db_manager)
+            self.entertainment_handler = EntertainmentHandler(self.api, self.db_manager)
+            self.voice_handler = VoiceHandler(self.api, self.db_manager)
+            self.music_handler = MusicHandler(self.api, self.db_manager)
+            self.room_handler = RoomHandler(self.api, self.db_manager)
+            self.solution_handler = SolutionHandler(self.api, self.db_manager)
+            self.calculator_handler = CalculatorHandler(self.api, self.db_manager)
+            
+            # 推送模块 (可选)
+            self.scheduler = None
+            self.daily_keyword_push = None
+            self.daily_report_push = None
+            self.weekly_report_push = None
+            self.place_task_push = None
+            self.broadcast_system = None
+            self.push_handler = None
+        except Exception as e:
+            logger.error(f"三角洲插件初始化失败: {e}")
+            import traceback
+            logger.error(traceback.format_exc())
+            # 重新抛出异常，或者保持部分功能可用
+            # 这里我们选择打印堆栈，以便排查 list index out of range 具体位置
+            raise e
 
     async def initialize(self):
         """插件初始化"""
