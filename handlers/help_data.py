@@ -4,9 +4,10 @@ HELP_CFG = {
     "subTitle": "DeltaForce-Plugin HELP",
     "themeName": "default",
     "colWidth": 420,
-    "colCount": 3,
+    "colCount": 2,
     "twoColumnLayout": True,
-    "bgBlur": True
+    "bgBlur": True,
+    "width": 1000
 }
 
 HELP_LIST = {
@@ -14,10 +15,6 @@ HELP_LIST = {
         {
             "order": 1,
             "group": "所有命令统一使用 /三角洲前缀，例如 /三角洲帮助"
-        },
-        {
-            "order": 2,
-            "group": "此为基础菜单，其他功能请使用 /三角洲娱乐帮助 查看娱乐菜单"
         },
         {
             "order": 100,
@@ -141,10 +138,6 @@ HELP_LIST = {
                 {"icon": 78, "title": "/三角洲TTS角色列表", "desc": "获取TTS角色预设列表"},
                 {"icon": 78, "title": "/三角洲TTS角色详情", "desc": "获取TTS角色预设详情"},
                 {"icon": 78, "title": "/三角洲TTS", "desc": "TTS语音合成"},
-                {"icon": 78, "title": "/三角洲语音", "desc": "发送游戏语音"},
-                {"icon": 78, "title": "/三角洲语音角色", "desc": "获取语音角色列表"},
-                {"icon": 78, "title": "/三角洲语音标签", "desc": "获取语音标签列表"},
-                {"icon": 78, "title": "/三角洲语音分类", "desc": "获取语音分类列表"},
                 {"icon": 78, "title": "/三角洲鼠鼠音乐", "desc": "播放鼠鼠音乐"},
                 {"icon": 78, "title": "/三角洲音乐列表", "desc": "获取音乐列表"},
                 {"icon": 78, "title": "/三角洲鼠鼠歌单", "desc": "获取鼠鼠歌单"}

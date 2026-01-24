@@ -116,6 +116,6 @@ body {
 .container {
   /* min-height: 100vh; Removed to allow dynamic height clipping */
   display: inline-block; /* Ensure it wraps content */
-  width: 1250px;
+  width: 830px;
   padding-bottom: 30px; /* Add some padding at bottom */
 }
