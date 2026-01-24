@@ -102,8 +102,13 @@ pip install apscheduler
 ## 安装
 
 1. 将本插件放入 AstrBot 的 `plugins` 目录
-2. 在 AstrBot 配置中添加 `token` 和 `clientid`
-3. 重启 AstrBot
+2. 安装依赖：
+   ```bash
+   pip install -r requirements.txt
+   playwright install chromium
+   ```
+3. 在 AstrBot 配置中添加 `token` 和 `clientid`
+4. 重启 AstrBot
 
 ## 配置
 
