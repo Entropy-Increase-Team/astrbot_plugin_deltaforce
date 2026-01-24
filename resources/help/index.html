@@ -21,7 +21,7 @@
             <div class="tr">
                 {% for help in batch %}
                 <div class="td">
-                <span class="help-icon">{{ help.icon }}</span>
+                <span class="help-icon" style="{{ help.css | default('') | safe }}">{{ help.icon }}</span>
                 <strong class="help-title">{{ help.title }}</strong>
                 <span class="help-desc">{{ help.desc }}</span>
                 </div>

@@ -5,152 +5,84 @@
 from astrbot.api.event import AstrMessageEvent
 import astrbot.api.message_components as Comp
 from .base import BaseHandler
+from .help_data import HELP_CFG, HELP_LIST
 from ..utils.render import Render
 
 
 class SystemHandler(BaseHandler):
     """系统处理器"""
 
-    # 帮助信息配置
-    HELP_GROUPS = [
-        {
-            "group": "📱 账号管理",
-            "list": [
-                {"icon": "🔐", "title": "/三角洲 登录", "desc": "QQ扫码登录"},
-                {"icon": "💬", "title": "/三角洲 微信登录", "desc": "微信扫码登录"},
-                {"icon": "🛡️", "title": "/三角洲 安全中心登录", "desc": "QQ安全中心登录"},
-                {"icon": "🎮", "title": "/三角洲 WeGame登录", "desc": "WeGame登录"},
-                {"icon": "🍪", "title": "/三角洲 CK登录 <cookie>", "desc": "Cookie登录"},
-                {"icon": "🔗", "title": "/三角洲 QQ授权登录", "desc": "OAuth授权登录"},
-                {"icon": "📋", "title": "/三角洲 账号列表", "desc": "查看绑定账号"},
-                {"icon": "🔄", "title": "/三角洲 切换 <序号>", "desc": "切换账号"},
-                {"icon": "🗑️", "title": "/三角洲 解绑 <序号>", "desc": "解绑账号"},
-            ]
-        },
-        {
-            "group": "📊 信息查询",
-            "list": [
-                {"icon": "👤", "title": "/三角洲 信息", "desc": "个人信息"},
-                {"icon": "🆔", "title": "/三角洲 UID", "desc": "查询UID"},
-                {"icon": "💰", "title": "/三角洲 货币", "desc": "货币余额"},
-                {"icon": "🔑", "title": "/三角洲 每日密码", "desc": "今日密码"},
-                {"icon": "⚠️", "title": "/三角洲 违规历史", "desc": "封禁记录"},
-                {"icon": "👥", "title": "/三角洲 干员列表", "desc": "所有干员"},
-                {"icon": "🏭", "title": "/三角洲 特勤处状态", "desc": "特勤处状态"},
-                {"icon": "🎁", "title": "/三角洲 出红记录", "desc": "红装出货"},
-                {"icon": "🏥", "title": "/三角洲 健康状态", "desc": "游戏健康"},
-            ]
-        },
-        {
-            "group": "📈 数据查询",
-            "list": [
-                {"icon": "📊", "title": "/三角洲 数据 [模式]", "desc": "个人数据"},
-                {"icon": "📜", "title": "/三角洲 流水 [类型]", "desc": "流水记录"},
-                {"icon": "🎯", "title": "/三角洲 战绩 [模式]", "desc": "战绩记录"},
-                {"icon": "💵", "title": "/三角洲 昨日收益", "desc": "昨日收益"},
-                {"icon": "🏆", "title": "/三角洲 藏品", "desc": "藏品信息"},
-                {"icon": "🗺️", "title": "/三角洲 地图统计", "desc": "地图数据"},
-                {"icon": "📅", "title": "/三角洲 日报", "desc": "查看日报"},
-                {"icon": "📆", "title": "/三角洲 周报", "desc": "查看周报"},
-            ]
-        },
-        {
-            "group": "🔧 工具查询",
-            "list": [
-                {"icon": "🔍", "title": "/三角洲 搜索 <词>", "desc": "搜索物品"},
-                {"icon": "💲", "title": "/三角洲 价格 <物品>", "desc": "物品价格"},
-                {"icon": "📦", "title": "/三角洲 材料价格", "desc": "材料价格"},
-                {"icon": "📈", "title": "/三角洲 利润排行", "desc": "利润榜"},
-                {"icon": "📝", "title": "/三角洲 物品列表", "desc": "物品列表"},
-                {"icon": "💎", "title": "/三角洲 大红收藏", "desc": "大红藏品"},
-            ]
-        },
-        {
-            "group": "🧮 计算器",
-            "list": [
-                {"icon": "🔧", "title": "/三角洲 修甲 <参数>", "desc": "维修计算"},
-                {"icon": "💥", "title": "/三角洲 伤害 <参数>", "desc": "伤害计算"},
-                {"icon": "⚔️", "title": "/三角洲 战场伤害", "desc": "战场伤害"},
-                {"icon": "🎒", "title": "/三角洲 战备 <目标>", "desc": "战备配装"},
-                {"icon": "❓", "title": "/三角洲 计算帮助", "desc": "计算器帮助"},
-            ]
-        },
-        {
-            "group": "🎤 娱乐功能",
-            "list": [
-                {"icon": "🗣️", "title": "/三角洲 tts <角色> <文字>", "desc": "语音合成"},
-                {"icon": "🎭", "title": "/三角洲 tts角色列表", "desc": "角色列表"},
-                {"icon": "🤖", "title": "/三角洲 ai锐评", "desc": "AI战绩点评"},
-                {"icon": "🔊", "title": "/三角洲 语音 [角色]", "desc": "游戏语音"},
-                {"icon": "🎵", "title": "/三角洲 鼠鼠音乐", "desc": "播放音乐"},
-            ]
-        },
-        {
-            "group": "🏠 开黑房间",
-            "list": [
-                {"icon": "📋", "title": "/三角洲 房间列表", "desc": "查看房间"},
-                {"icon": "➕", "title": "/三角洲 创建房间", "desc": "创建房间"},
-                {"icon": "🚪", "title": "/三角洲 加入房间 <ID>", "desc": "加入房间"},
-                {"icon": "ℹ️", "title": "/三角洲 房间信息 <ID>", "desc": "房间详情"},
-            ]
-        },
-        {
-            "group": "🔫 改枪方案",
-            "list": [
-                {"icon": "📜", "title": "/三角洲 改枪码列表", "desc": "方案列表"},
-                {"icon": "🔍", "title": "/三角洲 改枪码详情 <ID>", "desc": "方案详情"},
-                {"icon": "📤", "title": "/三角洲 上传改枪码", "desc": "上传方案"},
-                {"icon": "👍", "title": "/三角洲 改枪码点赞 <ID>", "desc": "点赞方案"},
-            ]
-        },
-        {
-            "group": "📢 推送功能",
-            "list": [
-                {"icon": "🔔", "title": "/三角洲 开启每日密码推送", "desc": "群推送(管理)"},
-                {"icon": "📊", "title": "/三角洲 开启日报推送", "desc": "订阅日报"},
-                {"icon": "📈", "title": "/三角洲 开启周报推送", "desc": "订阅周报"},
-                {"icon": "🏭", "title": "/三角洲 开启特勤处推送", "desc": "制造通知"},
-                {"icon": "📋", "title": "/三角洲 推送状态", "desc": "查看推送"},
-            ]
-        },
-        {
-            "group": "⚙️ 系统功能",
-            "list": [
-                {"icon": "❓", "title": "/三角洲 帮助", "desc": "显示本帮助"},
-                {"icon": "🌐", "title": "/三角洲 服务器状态", "desc": "API服务状态"},
-                {"icon": "📜", "title": "/三角洲 更新日志", "desc": "更新历史"},
-                {"icon": "📊", "title": "/三角洲 插件状态", "desc": "插件状态"},
-            ]
-        },
-    ]
+    def _process_icon(self, icon_id):
+        if not icon_id:
+            return None
+        try:
+            val = int(icon_id)
+            x = (val - 1) % 10
+            y = (val - x - 1) // 10
+            # Icon size 50px
+            return f"background-position: -{x * 50}px -{y * 50}px;"
+        except (ValueError, TypeError):
+            return None
+
+    def _process_groups(self, groups):
+        processed = []
+        for g in groups:
+            new_group = g.copy()
+            if "list" in new_group:
+                new_list = []
+                for item in new_group["list"]:
+                    new_item = item.copy()
+                    if "icon" in new_item:
+                         css = self._process_icon(new_item["icon"])
+                         if css:
+                             new_item["css"] = css
+                             new_item["icon"] = "" # Clear icon text if using sprite
+                    new_list.append(new_item)
+                new_group["list"] = new_list
+            processed.append(new_group)
+        return processed
 
     async def show_help(self, event: AstrMessageEvent):
         """显示帮助信息"""
-        # 将帮助分为左右两列
-        help_groups = self.HELP_GROUPS
-        mid = (len(help_groups) + 1) // 2
-        left_groups = help_groups[:mid]
-        right_groups = help_groups[mid:]
+        # Load config and list
+        help_cfg = HELP_CFG.copy()
+        help_list = HELP_LIST
+        
+        # Process groups
+        top_full = []
+        bottom_full = []
+        
+        if "fullWidth" in help_list:
+            for group in help_list["fullWidth"]:
+                if group.get("order", 0) < 50:
+                    top_full.append(group)
+                else:
+                    bottom_full.append(group)
 
-        # 获取背景图片的绝对路径并转换为 file URI
-        # 这样可以确保 Playwright 能够正确加载本地图片
+        top_groups = self._process_groups(top_full)
+        bottom_groups = self._process_groups(bottom_full)
+        left_groups = self._process_groups(help_list.get("left", []))
+        right_groups = self._process_groups(help_list.get("right", []))
+
+        # Background logic
         bg_path = Render.RESOURCES_PATH / "imgs" / "background" / "bg2-1.webp"
         bg_uri = bg_path.as_uri()
         
-        # 构建样式
-        # 强制设置背景图片，并添加背景颜色作为回退
+        # Icon Sprite Logic
+        icon_path = Render.RESOURCES_PATH / "help" / "imgs" / "default" / "icon.png"
+        icon_uri = icon_path.as_uri()
+
         style = f"""
         :root {{
             --bg-url: url('{bg_uri}');
             --container-bg-url: url('{bg_uri}');
-            --icon-url: none;
+            --icon-url: url('{icon_uri}');
             --primary-color: #ceb78b;
             --desc-color: #eee;
         }}
         body, .container {{
-            background-color: #222 !important; /* 防止图片加载失败时显示白底 */
+            background-color: #222 !important; 
         }}
-        /* Ensure glass effect is visible if container has background */
         .cont-box {{
              background: rgba(255, 255, 255, 0.1) !important;
              backdrop-filter: blur(10px);
@@ -159,20 +91,16 @@ class SystemHandler(BaseHandler):
         """
         
         render_data = {
-            'helpCfg': {
-                'title': '三角洲行动插件帮助',
-                'subTitle': 'DeltaForce-Plugin for AstrBot'
-            },
+            'helpCfg': help_cfg,
             'style': style,
             'bgType': ' default',
             'twoColumnLayout': True,
+            'topFullWidthGroups': top_groups,
+            'bottomFullWidthGroups': bottom_groups,
             'leftGroups': left_groups,
             'rightGroups': right_groups,
-            'helpGroups': help_groups,
         }
         
-        # 尝试渲染图片
-        # 增加高度以容纳更多指令，Playwright 会自动裁剪到实际内容
         yield await self.render_and_reply(
             event,
             'help/index.html',
