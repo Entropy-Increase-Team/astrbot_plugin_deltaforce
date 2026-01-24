@@ -1,8 +1,10 @@
-﻿{{extend commonLayout}}
-{{block 'css'}}
+﻿{% extends "common/common.html" %}
+
+{% block css %}
 <link rel="stylesheet" type="text/css" href="Template/record/record.css"/>
-{{/block}}
-{{block 'main'}}
+{% endblock %}
+
+{% block main %}
 <div class="container">
     <!-- 头部区域 -->
     <div class="header">
@@ -12,32 +14,32 @@
             </div>
             <div class="header-right">
                 <div class="header-info">
-                    <span class="mode-name">{{modeName}}战绩</span>
+                    <span class="mode-name">{{ modeName }}战绩</span>
                 </div>
-                <span class="time-stamp">第 {{page}} 页</span>
+                <span class="time-stamp">第 {{ page }} 页</span>
             </div>
         </div>
     </div>
 
     <div class="content">
         <div class="record-list">
-            {{if records && records.length > 0}}
-                {{each records item index}}
+            {% if records and records | length > 0 %}
+                {% for item in records %}
                 <!-- 战绩卡片：使用地图作为背景 -->
-                <div class="record-card" style="{{if item.mapBg}}background-image: url({{item.mapBg}});{{/if}}">
+                <div class="record-card" style="{% if item.mapBg %}background-image: url('{{ item.mapBg }}');{% endif %}">
                     <!-- 数据区域（占据整个宽度） -->
                     <div class="data-section">
                         <!-- 状态标签和地图名称（同一行） -->
                         <div class="card-status">
                             <div class="title-info">
-                                <span class="record-index">#{{item.recordNum}}</span>
-                                <span class="map-name-display">{{item.map}}</span>
+                                <span class="record-index">#{{ item.recordNum }}</span>
+                                <span class="map-name-display">{{ item.map }}</span>
                                 <span class="title-separator">·</span>
-                                <span class="operator-name-display">{{item.operator}}</span>
+                                <span class="operator-name-display">{{ item.operator }}</span>
                             </div>
                             <div class="status-right">
-                                <span class="record-time">{{item.time}}</span>
-                                <span class="status-badge {{item.statusClass}}">{{item.status}}</span>
+                                <span class="record-time">{{ item.time }}</span>
+                                <span class="status-badge {{ item.statusClass }}">{{ item.status }}</span>
                             </div>
                         </div>
 
@@ -46,114 +48,114 @@
                             <!-- 数据内容区域 -->
                             <div class="data-content">
                                 <!-- 烽火地带：带出价值 -->
-                                {{if item.value}}
+                                {% if item.value %}
                                 <div class="data-item-main">
                                     <div class="data-label">带出价值</div>
-                                    <div class="data-value highlight-value">{{item.value}}</div>
+                                    <div class="data-value highlight-value">{{ item.value }}</div>
                                 </div>
-                                {{/if}}
+                                {% endif %}
 
                                 <!-- 烽火地带：净收益 -->
-                                {{if item.income}}
+                                {% if item.income %}
                                 <div class="data-item-main">
                                     <div class="data-label">净收益</div>
-                                    <div class="data-value highlight-income {{item.incomeClass}}">{{item.income}}</div>
+                                    <div class="data-value highlight-income {{ item.incomeClass }}">{{ item.income }}</div>
                                 </div>
-                                {{/if}}
+                                {% endif %}
 
                                 <!-- 全面战场：得分 -->
-                                {{if item.score}}
+                                {% if item.score %}
                                 <div class="data-item-main">
                                     <div class="data-label">得分</div>
-                                    <div class="data-value highlight-score">{{item.score}}</div>
+                                    <div class="data-value highlight-score">{{ item.score }}</div>
                                 </div>
-                                {{/if}}
+                                {% endif %}
 
                                 <!-- 全面战场：KDA -->
-                                {{if item.kda}}
+                                {% if item.kda %}
                                 <div class="data-item-main">
                                     <div class="data-label">KDA</div>
-                                    <div class="data-value highlight-kda">{{item.kda}}</div>
+                                    <div class="data-value highlight-kda">{{ item.kda }}</div>
                                 </div>
-                                {{/if}}
+                                {% endif %}
 
                                 <!-- 时长 -->
-                                {{if item.duration}}
+                                {% if item.duration %}
                                 <div class="data-item-main">
                                     <div class="data-label">作战时长</div>
-                                    <div class="data-value">{{item.duration}}</div>
+                                    <div class="data-value">{{ item.duration }}</div>
                                 </div>
-                                {{/if}}
+                                {% endif %}
                             </div>
 
                             <!-- 第2行：击杀统计和救援 -->
                             <div class="data-row-secondary">
-                                {{if item.killsHtml}}
+                                {% if item.killsHtml %}
                                 <div class="kills-section">
                                     <div class="kills-label">击杀明细</div>
                                     <div class="kills-content">
-                                        {{@item.killsHtml}}
+                                        {{ item.killsHtml | safe }}
                                     </div>
                                 </div>
-                                {{/if}}
+                                {% endif %}
 
-                                {{if item.rescue}}
+                                {% if item.rescue %}
                                 <div class="rescue-section">
                                     <div class="rescue-label">战场救援</div>
-                                    <div class="rescue-value">{{item.rescue}} 次</div>
+                                    <div class="rescue-value">{{ item.rescue }} 次</div>
                                 </div>
-                                {{/if}}
+                                {% endif %}
                             </div>
                         </div>
 
                         <!-- 队友信息区域（仅烽火地带显示） -->
-                        {{if item.value && item.teammates && item.teammates.length > 0}}
+                        {% if item.value and item.teammates and item.teammates | length > 0 %}
                         <div class="teammates-section">
                             <div class="teammates-label">队友信息</div>
                             <div class="teammates-list">
-                                {{each item.teammates teammate}}
+                                {% for teammate in item.teammates %}
                                 <div class="teammate-card">
                                     <div class="teammate-header">
-                                        <div class="teammate-operator">{{teammate.operator}}</div>
-                                        <span class="teammate-status-badge {{teammate.statusClass}}">{{teammate.status}}</span>
+                                        <div class="teammate-operator">{{ teammate.operator }}</div>
+                                        <span class="teammate-status-badge {{ teammate.statusClass }}">{{ teammate.status }}</span>
                                     </div>
                                     <div class="teammate-data">
-                                        {{if teammate.value}}
+                                        {% if teammate.value %}
                                         <div class="teammate-item">
                                             <span class="teammate-item-label">价值</span>
-                                            <span class="teammate-item-value">{{teammate.value}}</span>
+                                            <span class="teammate-item-value">{{ teammate.value }}</span>
                                         </div>
-                                        {{/if}}
-                                        {{if teammate.kills}}
+                                        {% endif %}
+                                        {% if teammate.kills %}
                                         <div class="teammate-item">
                                             <span class="teammate-item-label">击杀</span>
-                                            <span class="teammate-item-value">{{teammate.kills}}</span>
+                                            <span class="teammate-item-value">{{ teammate.kills }}</span>
                                         </div>
-                                        {{/if}}
-                                        {{if teammate.duration}}
+                                        {% endif %}
+                                        {% if teammate.duration %}
                                         <div class="teammate-item">
                                             <span class="teammate-item-label">时长</span>
-                                            <span class="teammate-item-value">{{teammate.duration}}</span>
+                                            <span class="teammate-item-value">{{ teammate.duration }}</span>
                                         </div>
-                                        {{/if}}
-                                        {{if teammate.rescue > 0}}
+                                        {% endif %}
+                                        {% if teammate.rescue > 0 %}
                                         <div class="teammate-item">
                                             <span class="teammate-item-label">救援</span>
-                                            <span class="teammate-item-value">{{teammate.rescue}}次</span>
+                                            <span class="teammate-item-value">{{ teammate.rescue }}次</span>
                                         </div>
-                                        {{/if}}
+                                        {% endif %}
                                     </div>
                                 </div>
-                                {{/each}}
+                                {% endfor %}
                             </div>
                         </div>
-                        {{/if}}
+                        {% endif %}
                     </div>
                 </div>
-                {{/each}}
-            {{else}}
+                {% endfor %}
+            {% else %}
                 <div class="no-data">当前页面无战绩记录</div>
-            {{/if}}
+            {% endif %}
         </div>
     </div>
     
@@ -162,6 +164,6 @@
         <div class="copyright-text">由 DeltaForce-Plugin-Yunzai 强力驱动</div>
     </div>
 </div>
-{{/block}}
-{{block 'footer'}}{{/block}}
+{% endblock %}
+{% block footer %}{% endblock %}
 

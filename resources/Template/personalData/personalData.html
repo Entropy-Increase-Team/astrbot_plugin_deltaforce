@@ -1,9 +1,11 @@
-﻿{{extend commonLayout}}
-{{block 'css'}}
-<link rel="stylesheet" type="text/css" href="Template/personalData/personalData.css"/>
-{{/block}}
-{{block 'main'}}
-<div class="container {{if mpDetail}}mp-theme{{/if}}">
+﻿{% extends "common/common.html" %}
+
+{% block css %}
+<link rel="stylesheet" type="text/css" href="personalData/personalData.css"/>
+{% endblock %}
+
+{% block main %}
+<div class="container {% if mpDetail %}mp-theme{% endif %}">
     <!-- 背景装饰层 -->
     <div class="bg-grid"></div>
     
@@ -17,111 +19,111 @@
         <div class="header-right">
             <div class="user-info">
                 <div class="user-name-row">
-                    <div class="season-info">赛季 - {{season === '全部' ? '全部' : season}}</div>
-                    <div class="user-name">{{userName}}</div>
+                    <div class="season-info">赛季 - {% if season == '全部' %}全部{% else %}{{ season }}{% endif %}</div>
+                    <div class="user-name">{{ userName }}</div>
                 </div>
-                <div class="report-date">报告日期: {{currentDate}}</div>
+                <div class="report-date">报告日期: {{ currentDate }}</div>
             </div>
             <div class="avatar-wrapper">
-                <img src="{{userAvatar}}" alt="Avatar" data-qq-avatar="{{qqAvatarUrl}}" onerror="if(this.dataset.qqAvatar){this.src=this.dataset.qqAvatar;this.onerror=null;}" />
+                <img src="{{ userAvatar }}" alt="Avatar" data-qq-avatar="{{ qqAvatarUrl }}" onerror="if(this.dataset.qqAvatar){this.src=this.dataset.qqAvatar;this.onerror=null;}" />
             </div>
         </div>
     </div>
 
     <!-- 数据看板 -->
     <div class="dashboard-section">
-        <div class="dashboard-grid {{if mpDetail}}mp-grid{{/if}}">
-            {{if solDetail}}
+        <div class="dashboard-grid {% if mpDetail %}mp-grid{% endif %}">
+            {% if solDetail %}
             <!-- 第一行：段位、总撤离、总带出价值、收藏大红（固定4个） -->
             <div class="data-node highlight">
                 <div class="node-label"><i class="icon-rank"></i> 段位 / OPERATOR RANK</div>
                 <div class="rank-display">
-                    {{if solRankImage}}
-                    <img src="{{solRankImage}}" class="rank-img" alt="{{solRank}}" onerror="this.style.display='none';" />
-                    {{/if}}
-                    <span class="node-value">{{solRank}}</span>
+                    {% if solRankImage %}
+                    <img src="{{ solRankImage }}" class="rank-img" alt="{{ solRank }}" onerror="this.style.display='none';" />
+                    {% endif %}
+                    <span class="node-value">{{ solRank }}</span>
                 </div>
             </div>
             <div class="data-node highlight">
                 <div class="node-label">总撤离 / TOTAL EXTRACTIONS</div>
-                <span class="node-value large">{{solDetail.totalEscape || '-'}}</span>
+                <span class="node-value large">{{ solDetail.totalEscape | default('-') }}</span>
             </div>
             <div class="data-node highlight">
                 <div class="node-label">总带出价值 / TOTAL VALUE</div>
-                <span class="node-value large">{{solDetail.totalGainedPriceFormatted || '-'}}</span>
+                <span class="node-value large">{{ solDetail.totalGainedPriceFormatted | default('-') }}</span>
             </div>
                 <div class="data-node highlight">
                     <div class="node-label">收藏大红 / COLLECTION VALUE</div>
-                    <span class="node-value large">{{solDetail.redTotalMoney?.toLocaleString() || '-'}}</span>
+                    <span class="node-value large">{{ solDetail.redTotalMoneyStr | default('-') }}</span>
                 </div>
             <!-- 第二行：其他数据（4个一行） -->
             <div class="data-node highlight">
                 <div class="node-label">用户排名 / USER RANK</div>
-                <span class="node-value highlight-green">{{solDetail.userRank || '-'}}</span>
+                <span class="node-value highlight-green">{{ solDetail.userRank | default('-') }}</span>
             </div>
             <div class="data-node highlight">
                 <div class="node-label">总对局 / TOTAL FIGHTS</div>
-                <span class="node-value large">{{solDetail.totalFight || '-'}}</span>
+                <span class="node-value large">{{ solDetail.totalFight | default('-') }}</span>
             </div>
             <div class="data-node highlight">
                 <div class="node-label">总击杀 / TOTAL KILLS</div>
-                <span class="node-value large">{{solDetail.totalKill || '-'}}</span>
+                <span class="node-value large">{{ solDetail.totalKill | default('-') }}</span>
             </div>
             <div class="data-node highlight">
                 <div class="node-label">总游戏时长 / TOTAL GAME TIME</div>
-                <span class="node-value highlight-green">{{solDetail.totalGameTime || '-'}}</span>
+                <span class="node-value highlight-green">{{ solDetail.totalGameTime | default('-') }}</span>
             </div>
-            {{/if}}
+            {% endif %}
 
-            {{if mpDetail}}
+            {% if mpDetail %}
             <!-- 第一行：5个数据 -->
             <div class="data-node highlight">
                 <div class="node-label">段位 / BATTLEFIELD RANK</div>
                 <div class="rank-display">
-                    {{if mpRankImage}}
-                    <img src="{{mpRankImage}}" class="rank-img" alt="{{mpRank}}" onerror="this.style.display='none';" />
-                    {{/if}}
-                    <span class="node-value">{{mpRank}}</span>
+                    {% if mpRankImage %}
+                    <img src="{{ mpRankImage }}" class="rank-img" alt="{{ mpRank }}" onerror="this.style.display='none';" />
+                    {% endif %}
+                    <span class="node-value">{{ mpRank }}</span>
                 </div>
             </div>
             <div class="data-node highlight">
                 <div class="node-label">胜率 / WIN RATE</div>
-                <span class="node-value large">{{mpDetail.winRatio ? mpDetail.winRatio + '%' : '-'}}</span>
+                <span class="node-value large">{% if mpDetail.winRatio %}{{ mpDetail.winRatio }}%{% else %}-{% endif %}</span>
             </div>
             <div class="data-node highlight">
                 <div class="node-label">总得分 / TOTAL SCORE</div>
-                <span class="node-value large">{{mpDetail.totalScore?.toLocaleString() || '-'}}</span>
+                <span class="node-value large">{{ mpDetail.totalScoreStr | default('-') }}</span>
             </div>
             <div class="data-node highlight">
                 <div class="node-label">每分钟击杀 / KILLS PER MINUTE</div>
-                <span class="node-value">{{mpDetail.avgKillPerMinuteFormatted || '-'}}</span>
+                <span class="node-value">{{ mpDetail.avgKillPerMinuteFormatted | default('-') }}</span>
             </div>
             <div class="data-node highlight">
                 <div class="node-label">每分钟得分 / SCORE PER MINUTE</div>
-                <span class="node-value">{{mpDetail.avgScorePerMinuteFormatted || '-'}}</span>
+                <span class="node-value">{{ mpDetail.avgScorePerMinuteFormatted | default('-') }}</span>
             </div>
             <!-- 第二行：5个数据 -->
             <div class="data-node highlight">
                 <div class="node-label">总对局 / TOTAL FIGHTS</div>
-                <span class="node-value large">{{mpDetail.totalFight || '-'}}</span>
+                <span class="node-value large">{{ mpDetail.totalFight | default('-') }}</span>
             </div>
             <div class="data-node highlight">
                 <div class="node-label">总胜利 / TOTAL WINS</div>
-                <span class="node-value large">{{mpDetail.totalWin || '-'}}</span>
+                <span class="node-value large">{{ mpDetail.totalWin | default('-') }}</span>
             </div>
             <div class="data-node highlight">
                 <div class="node-label">载具击杀 / VEHICLE KILLS</div>
-                <span class="node-value">{{mpDetail.totalVehicleKill || '-'}}</span>
+                <span class="node-value">{{ mpDetail.totalVehicleKill | default('-') }}</span>
             </div>
             <div class="data-node highlight">
                 <div class="node-label">载具摧毁 / VEHICLE DESTROYED</div>
-                <span class="node-value">{{mpDetail.totalVehicleDestroyed || '-'}}</span>
+                <span class="node-value">{{ mpDetail.totalVehicleDestroyed | default('-') }}</span>
             </div>
             <div class="data-node highlight">
                 <div class="node-label">总游戏时长 / TOTAL GAME TIME</div>
-                <span class="node-value">{{mpDetail.totalGameTime || '-'}}</span>
+                <span class="node-value">{{ mpDetail.totalGameTime | default('-') }}</span>
             </div>
-            {{/if}}
+            {% endif %}
         </div>
     </div>
 
@@ -130,111 +132,109 @@
         <div class="section-header">
             <span class="dot"></span> 常玩地图 / DEPLOYMENT HISTORY
         </div>
-        {{if solDetail}}
+        {% if solDetail %}
         <div class="kd-card">
             <div class="kd-label">击杀比 / K/D RATIO</div>
             <div class="kd-grid">
                 <div class="kd-item">
                     <small>常规</small>
-                    <span>{{solDetail.lowKD || '-'}}</span>
+                    <span>{{ solDetail.lowKD | default('-') }}</span>
                 </div>
                 <div class="kd-item">
                     <small>机密</small>
-                    <span>{{solDetail.medKD || '-'}}</span>
+                    <span>{{ solDetail.medKD | default('-') }}</span>
                 </div>
                 <div class="kd-item">
                     <small>绝密</small>
-                    <span>{{solDetail.highKD || '-'}}</span>
+                    <span>{{ solDetail.highKD | default('-') }}</span>
                 </div>
             </div>
         </div>
-        {{/if}}
+        {% endif %}
         <div class="map-list">
-            {{if solDetail && solDetail.mapList}}
-                {{each solDetail.mapList group}}
+            {% if solDetail and solDetail.mapList %}
+                {% for group in solDetail.mapList %}
                 <div class="map-row">
-                    {{each group.maps map}}
+                    {% for map in group.maps %}
                     <div class="map-card">
-                        <img src="{{map.mapImage}}" class="map-bg" alt="{{map.mapName}}" onerror="this.style.display='none';" />
+                        <img src="{{ map.mapImage }}" class="map-bg" alt="{{ map.mapName }}" onerror="this.style.display='none';" />
                         <div class="map-content">
-                            <div class="map-name">{{map.mapName}}</div>
-                            <div class="map-stats">对局: {{map.totalCount}} | 撤离: {{map.leaveCount}}</div>
+                            <div class="map-name">{{ map.mapName }}</div>
+                            <div class="map-stats">对局: {{ map.totalCount }} | 撤离: {{ map.leaveCount }}</div>
                         </div>
                     </div>
-                    {{/each}}
+                    {% endfor %}
                 </div>
-                {{/each}}
-            {{/if}}
-            {{if mpDetail && mpDetail.mapList}}
+                {% endfor %}
+            {% endif %}
+            {% if mpDetail and mpDetail.mapList %}
                 <div class="map-list-mp">
-                    {{each mpDetail.mapList map}}
+                    {% for map in mpDetail.mapList %}
                     <div class="map-card">
-                        <img src="{{map.mapImage}}" class="map-bg" alt="{{map.mapName}}" onerror="this.style.display='none';" />
+                        <img src="{{ map.mapImage }}" class="map-bg" alt="{{ map.mapName }}" onerror="this.style.display='none';" />
                         <div class="map-content">
-                            <div class="map-name">{{map.mapName}}</div>
-                            <div class="map-stats">对局: {{map.totalCount}} | 胜利: {{map.leaveCount}}</div>
+                            <div class="map-name">{{ map.mapName }}</div>
+                            <div class="map-stats">对局: {{ map.totalCount }} | 胜利: {{ map.leaveCount }}</div>
                         </div>
                     </div>
-                    {{/each}}
+                    {% endfor %}
                 </div>
-            {{/if}}
+            {% endif %}
         </div>
     </div>
 
     <!-- 武器登记 (仅烽火地带) -->
-    {{if solDetail}}
+    {% if solDetail %}
     <div class="section-block">
         <div class="section-header">
             <span class="dot"></span> 常用武器 / WEAPON REGISTRY
         </div>
         <div class="weapon-list">
-            {{if solDetail.gunPlayList && solDetail.gunPlayList.length > 0}}
-                {{each solDetail.gunPlayList weapon}}
+            {% if solDetail.gunPlayList and solDetail.gunPlayList | length > 0 %}
+                {% for weapon in solDetail.gunPlayList %}
                 <div class="weapon-item">
                     <div class="weapon-img-box">
-                        <img src="{{weapon.imageUrl}}" alt="{{weapon.weaponName}}" onerror="this.style.display='none';" />
+                        <img src="{{ weapon.imageUrl }}" alt="{{ weapon.weaponName }}" onerror="this.style.display='none';" />
                     </div>
                     <div class="weapon-info">
-                        <div class="weapon-name">{{weapon.weaponName}}</div>
-                        <div class="weapon-meta">对局: {{weapon.fightCount || 0}} | 撤离: {{weapon.escapeCount || 0}}</div>
-                        <div class="weapon-val">收益：{{weapon.totalPriceFormatted || '-'}}</div>
+                        <div class="weapon-name">{{ weapon.weaponName }}</div>
+                        <div class="weapon-meta">对局: {{ weapon.fightCount | default(0) }} | 撤离: {{ weapon.escapeCount | default(0) }}</div>
+                        <div class="weapon-val">收益：{{ weapon.totalPriceFormatted | default('-') }}</div>
                     </div>
                 </div>
-                {{/each}}
-            {{/if}}
+                {% endfor %}
+            {% else %}
+                 <div style="color: #999; padding: 20px;">暂无常用武器数据</div>
+            {% endif %}
         </div>
     </div>
-    {{/if}}
+    {% endif %}
 
-    <!-- 收藏品 (仅烽火地带) -->
-    {{if solDetail}}
+    <!-- 收藏品展示 (仅烽火地带) -->
+    {% if solDetail %}
     <div class="section-block">
         <div class="section-header">
-            <span class="dot"></span> 收藏品 / HIGH-VALUE ASSETS
+            <span class="dot"></span> 收藏品 / COLLECTIONS
         </div>
-        <div class="asset-list">
-            {{if solDetail.redCollectionList && solDetail.redCollectionList.length > 0}}
-                {{each solDetail.redCollectionList item}}
-                <div class="asset-item">
-                    <div class="asset-img-box">
-                        <img src="{{item.imageUrl}}" alt="{{item.objectName}}" onerror="this.style.display='none';" />
-                    </div>
-                    <div class="asset-info">
-                        <div class="asset-name">{{item.objectName}}</div>
-                        <div class="asset-meta">
-                            <span class="asset-price">{{item.priceFormatted}}</span>
-                            <span class="asset-count">X{{item.count}}</span>
-                        </div>
-                    </div>
+        <div class="collection-list">
+            {% if solDetail.redList and solDetail.redList | length > 0 %}
+                {% for item in solDetail.redList %}
+                <div class="collection-item">
+                    <img src="{{ item.imageUrl }}" alt="{{ item.name }}" onerror="this.style.display='none';" />
+                    <div class="count-badge">{{ item.count }}</div>
                 </div>
-                {{/each}}
-            {{/if}}
+                {% endfor %}
+            {% else %}
+               <div style="color: #999; padding: 20px;">暂无大红藏品记录</div>
+            {% endif %}
         </div>
     </div>
-    {{/if}}
+    {% endif %}
 
+    <!-- 版权信息 -->
+    <div class="footer">
+        Data source: Official API | Powered by Delta-Force-Plugin
+    </div>
 </div>
-{{/block}}
-{{block 'footer'}}
-{{/block}}
+{% endblock %}
 

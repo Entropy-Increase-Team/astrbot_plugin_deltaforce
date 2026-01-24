@@ -1,10 +1,10 @@
-﻿{{extend commonLayout}}
+{% extends "common/common.html" %}
 
-{{block 'css'}}
+{% block css %}
 <link rel="stylesheet" type="text/css" href="Template/healthInfo/healthInfo.css"/>
-{{/block}}
+{% endblock %}
 
-{{block 'main'}}
+{% block main %}
 <div class="container">
     <!-- 背景图片 -->
     <img class="bg-image" src="imgs/others/loading13.png" alt="" />
@@ -22,113 +22,111 @@
     <div class="content">
             <div class="content-layout">
                 <!-- 左侧：负面状态 -->
-                {{if deBuffList && deBuffList.length > 0}}
+                {% if deBuffList and deBuffList | length > 0 %}
                 <div class="left-section">
                     <div class="section-title debuff-title">负面状态</div>
                     <div class="section-content">
                         <div class="status-list">
-                            {{each deBuffList areaGroup}}
-                            {{if areaGroup.isMerged}}
+                            {% for areaGroup in deBuffList %}
+                            {% if areaGroup.isMerged %}
                             <!-- 合并的卡片：同一部位的两个状态 -->
                             <div class="status-card debuff-card merged-card">
-                                <div class="area-badge">{{areaGroup.area || '未知部位'}}</div>
+                                <div class="area-badge">{{ areaGroup.area | default('未知部位') }}</div>
                                 <div class="merged-status-container">
-                                    {{each areaGroup.list status}}
+                                    {% for status in areaGroup.list %}
                                     <div class="merged-status-item">
                                         <div class="status-header">
-                                            {{if status.pic}}
+                                            {% if status.pic %}
                                             <div class="status-icon-wrapper">
-                                                <img class="status-icon" src="{{status.pic}}" alt="{{status.title || status.status || '未知状态'}}" onerror="this.style.display='none';" />
+                                                <img class="status-icon" src="{{ status.pic }}" alt="{{ status.title | default(status.status) | default('未知状态') }}" onerror="this.style.display='none';" />
                                             </div>
-                                            {{/if}}
-                                            <div class="status-name">{{status.title || status.status || '未知状态'}}</div>
+                                            {% endif %}
+                                            <div class="status-name">{{ status.title | default(status.status) | default('未知状态') }}</div>
                                         </div>
-                                        {{if status.trigger}}
+                                        {% if status.trigger %}
                                         <div class="status-info">
                                             <span class="info-label">触发：</span>
-                                            <span class="info-value">{{status.trigger}}</span>
+                                            <span class="info-value">{{ status.trigger }}</span>
                                         </div>
-                                        {{/if}}
-                                        {{if status.effect}}
+                                        {% endif %}
+                                        {% if status.effect %}
                                         <div class="status-info">
                                             <span class="info-label">效果：</span>
-                                            <span class="info-value">{{status.effect}}</span>
+                                            <span class="info-value">{{ status.effect }}</span>
                                         </div>
-                                        {{/if}}
+                                        {% endif %}
                                     </div>
-                                    {{if !$last}}
+                                    {% if not loop.last %}
                                     <div class="merged-divider"></div>
-                                    {{/if}}
-                                    {{/each}}
+                                    {% endif %}
+                                    {% endfor %}
                                 </div>
                             </div>
-                            {{else}}
+                            {% else %}
                             <!-- 单个状态卡片 -->
-                            {{each areaGroup.list status}}
+                            {% for status in areaGroup.list %}
                             <div class="status-card debuff-card">
-                                <div class="area-badge">{{areaGroup.area || '未知部位'}}</div>
+                                <div class="area-badge">{{ areaGroup.area | default('未知部位') }}</div>
                                 <div class="status-header">
-                                    {{if status.pic}}
+                                    {% if status.pic %}
                                     <div class="status-icon-wrapper">
-                                        <img class="status-icon" src="{{status.pic}}" alt="{{status.title || status.status || '未知状态'}}" onerror="this.style.display='none';" />
+                                        <img class="status-icon" src="{{ status.pic }}" alt="{{ status.title | default(status.status) | default('未知状态') }}" onerror="this.style.display='none';" />
                                     </div>
-                                    {{/if}}
-                                    <div class="status-name">{{status.title || status.status || '未知状态'}}</div>
+                                    {% endif %}
+                                    <div class="status-name">{{ status.title | default(status.status) | default('未知状态') }}</div>
                                 </div>
-                                {{if status.trigger}}
+                                {% if status.trigger %}
                                 <div class="status-info">
                                     <span class="info-label">触发：</span>
-                                    <span class="info-value">{{status.trigger}}</span>
+                                    <span class="info-value">{{ status.trigger }}</span>
                                 </div>
-                                {{/if}}
-                                {{if status.effect}}
+                                {% endif %}
+                                {% if status.effect %}
                                 <div class="status-info">
                                     <span class="info-label">效果：</span>
-                                    <span class="info-value">{{status.effect}}</span>
+                                    <span class="info-value">{{ status.effect }}</span>
                                 </div>
-                                {{/if}}
+                                {% endif %}
                             </div>
-                            {{/each}}
-                            {{/if}}
-                            {{/each}}
+                            {% endfor %}
+                            {% endif %}
+                            {% endfor %}
                         </div>
                     </div>
                 </div>
-                {{/if}}
+                {% endif %}
 
                 <!-- 右侧：增益状态 -->
-                {{if buffList && buffList.length > 0}}
+                {% if buffList and buffList | length > 0 %}
                 <div class="right-section">
                     <div class="section-title buff-title">增益状态</div>
                     <div class="section-content">
                         <div class="status-list">
-                            {{each buffList buffGroup}}
-                            {{each buffGroup.list buff}}
+                            {% for buffGroup in buffList %}
+                            {% for buff in buffGroup.list %}
                             <div class="status-card buff-card">
                                 <div class="status-header">
-                                    {{if buff.pic}}
+                                    {% if buff.pic %}
                                     <div class="status-icon-wrapper">
-                                        <img class="status-icon" src="{{buff.pic}}" alt="{{buff.title || '未知增益'}}" onerror="this.style.display='none';" />
+                                        <img class="status-icon" src="{{ buff.pic }}" alt="{{ buff.title | default('未知增益') }}" onerror="this.style.display='none';" />
                                     </div>
-                                    {{/if}}
-                                    <div class="status-name">{{buff.title || '未知增益'}}</div>
+                                    {% endif %}
+                                    <div class="status-name">{{ buff.title | default('未知增益') }}</div>
                                 </div>
-                                {{if buff.effect}}
+                                {% if buff.effect %}
                                 <div class="status-info">
                                     <span class="info-label">效果：</span>
-                                    <span class="info-value">{{buff.effect}}</span>
+                                    <span class="info-value">{{ buff.effect }}</span>
                                 </div>
-                                {{/if}}
+                                {% endif %}
                             </div>
-                            {{/each}}
-                            {{/each}}
+                            {% endfor %}
+                            {% endfor %}
                         </div>
                     </div>
                 </div>
-                {{/if}}
+                {% endif %}
             </div>
-        </div>
     </div>
 </div>
-{{/block}}
-
+{% endblock %}

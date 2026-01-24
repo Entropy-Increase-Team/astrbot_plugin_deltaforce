@@ -1,8 +1,8 @@
-﻿{{extend commonLayout}}
-{{block 'css'}}
-<link rel="stylesheet" type="text/css" href="Template/userInfo/userInfo.css"/>
-{{/block}}
-{{block 'main'}}
+﻿{% extends "common/common.html" %}
+{% block css %}
+<link rel="stylesheet" type="text/css" href="userInfo/userInfo.css"/>
+{% endblock %}
+{% block main %}
 <div class="container">
     <!-- 背景图片 -->
     <img style="width: 1365px; height: 640px; left: 0px; top: 0px; position: absolute" 
@@ -39,10 +39,10 @@
         <div class="rank-info" style="width: 150px; height: 50px; left: 11px; top: 65px; position: absolute">{{solRankName}}</div>
         
         <!-- 段位图标 -->
-        {{if solRankImage}}
+        {% if solRankImage %}
         <img class="rank-icon" style="width: 55px; height: 55px; left: 165px; top: 65px; position: absolute" 
              src="{{solRankImage}}" alt="段位" />
-        {{/if}}
+        {% endif %}
         
         <!-- 游戏统计数据 -->
         <div class="stats-row" style="width: 336px; height: 75px; left: 10px; top: 110px; position: absolute">
@@ -78,10 +78,10 @@
         <div class="rank-info" style="width: 150px; height: 50px; left: 11px; top: 65px; position: absolute">{{tdmRankName}}</div>
         
         <!-- 段位图标 -->
-        {{if tdmRankImage}}
+        {% if tdmRankImage %}
         <img class="rank-icon" style="width: 55px; height: 55px; left: 165px; top: 65px; position: absolute" 
              src="{{tdmRankImage}}" alt="段位" />
-        {{/if}}
+        {% endif %}
         
         <!-- 游戏统计数据 -->
         <div class="stats-row" style="width: 336px; height: 75px; left: 5px; top: 110px; position: absolute">
@@ -102,4 +102,4 @@
     <!-- 插件水印 -->
     <div class="plugin-watermark" style="width: 350px; height: 24px; left: 507px; top: 600px; position: absolute">Delta-Force-Plugin</div>
 </div>
-{{/block}} 
+{% endblock %}

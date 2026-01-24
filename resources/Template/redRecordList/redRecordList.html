@@ -1,8 +1,10 @@
-﻿{{extend commonLayout}}
-{{block 'css'}}
+﻿{% extends "common/common.html" %}
+
+{% block css %}
 <link rel="stylesheet" type="text/css" href="Template/redRecordList/redRecordList.css"/>
-{{/block}}
-{{block 'main'}}
+{% endblock %}
+
+{% block main %}
 <div class="red-record-list-container">
     <!-- 整体背景图片 -->
     <img class="bg-overlay" src="imgs/redCollection/bg.webp" />
@@ -14,15 +16,15 @@
         </div>
         <div class="user-profile">
             <div class="avatar-wrapper">
-                <img class="avatar" src="{{userAvatar}}" data-qq-avatar="{{qqAvatarUrl}}" onerror="if(this.dataset.qqAvatar){this.src=this.dataset.qqAvatar;this.onerror=null;}else{this.style.display='none';}" />
+                <img class="avatar" src="{{ userAvatar }}" data-qq-avatar="{{ qqAvatarUrl }}" onerror="if(this.dataset.qqAvatar){this.src=this.dataset.qqAvatar;this.onerror=null;}else{this.style.display='none';}" />
             </div>
             <div class="user-meta">
-                <div class="nickname">{{userName}}</div>
+                <div class="nickname">{{ userName }}</div>
                 <div class="rank-tag">
-                    <span class="rank-text">{{userRank}}</span>
-                    {{if userRankImage}}
-                    <img class="rank-icon" src="{{userRankImage}}" alt="{{userRank}}" onerror="this.style.display='none';" />
-                    {{/if}}
+                    <span class="rank-text">{{ userRank }}</span>
+                    {% if userRankImage %}
+                    <img class="rank-icon" src="{{ userRankImage }}" alt="{{ userRank }}" onerror="this.style.display='none';" />
+                    {% endif %}
                 </div>
             </div>
         </div>
@@ -38,29 +40,29 @@
             <div class="stat-card">
                 <div class="stat-content">
                 <div class="stat-label">收藏种类</div>
-                <div class="stat-value">{{statistics.redGodCount}}</div>
+                <div class="stat-value">{{ statistics.redGodCount }}</div>
                 </div>
             </div>
             <div class="stat-card">
                 <div class="stat-content">
                 <div class="stat-label">总出红次数</div>
-                <div class="stat-value">{{statistics.redTotalCount}}</div>
+                <div class="stat-value">{{ statistics.redTotalCount }}</div>
                 </div>
             </div>
             <div class="stat-card highlight">
                 <div class="stat-content">
                 <div class="stat-label">总价值</div>
-                    <div class="stat-value text-glow">{{statistics.redTotalValue}}</div>
+                    <div class="stat-value text-glow">{{ statistics.redTotalValue }}</div>
                 </div>
             </div>
-            {{if statistics.unlockedCount}}
+            {% if statistics.unlockedCount %}
             <div class="stat-card">
                 <div class="stat-content">
                 <div class="stat-label">未解锁</div>
-                <div class="stat-value">{{statistics.unlockedCount}}</div>
+                <div class="stat-value">{{ statistics.unlockedCount }}</div>
                 </div>
             </div>
-            {{/if}}
+            {% endif %}
         </div>
     </div>
     
@@ -68,41 +70,50 @@
     <div class="section-block list-section">
         <div class="section-header">
             <span class="dot"></span> 出红记录列表 / RECORD LIST
-            {{if totalRecords > 0}}
-            <span class="records-badge">{{totalRecords}}</span>
-            {{/if}}
+            {% if totalRecords > 0 %}
+            <span class="records-badge">{{ totalRecords }}</span>
+            {% endif %}
         </div>
         
         <div class="records-content">
-            {{if records && records.length > 0}}
-                {{each records record index}}
-                <div class="record-entry {{if index < 3}}top-rank{{/if}}">
-                    <div class="entry-index">{{index + 1}}</div>
+            {% if records and records | length > 0 %}
+                {% for record in records %}
+                <div class="record-entry {% if loop.index0 < 3 %}top-rank{% endif %}">
+                    <div class="entry-index">{{ loop.index }}</div>
                     <div class="entry-item-preview">
-                        <img src="{{record.imageUrl}}" onerror="this.style.opacity='0'" />
+                        <img src="{{ record.imageUrl }}" onerror="this.style.opacity='0'" />
                     </div>
                     <div class="entry-data">
                         <div class="entry-row">
                             <span class="entry-label">物品名称 / ITEM NAME</span>
-                            <span class="entry-value">{{record.name}}</span>
+                            <span class="entry-value">{{ record.name }}</span>
                         </div>
                         <div class="entry-row">
                             <span class="entry-label">出红次数 / COUNT</span>
-                            <span class="entry-value">{{record.count}}</span>
+                            <span class="entry-value">{{ record.count }}</span>
                         </div>
                         <div class="entry-row">
                             <span class="entry-label">总价值 / VALUE</span>
-                            <span class="entry-value highlight">{{record.value}}</span>
+                            <span class="entry-value highlight">{{ record.value }}</span>
                         </div>
                     </div>
                 </div>
-                {{/each}}
-            {{else}}
-                <div class="empty-state">暂无出红记录</div>
-            {{/if}}
+                {% endfor %}
+            {% else %}
+                <div class="no-data">暂无出红记录</div>
+            {% endif %}
+        </div>
+        
+        <div class="pagination-info">
+            显示最近 {{ records | length }} 条记录
         </div>
     </div>
+    
+    <!-- 页脚 -->
+    <div class="template-footer">
+        <div class="copyright-text">由 DeltaForce-Plugin-Yunzai 强力驱动</div>
+    </div>
 </div>
-{{/block}}
-{{block 'footer'}}{{/block}}
+{% endblock %}
+{% block footer %}{% endblock %}
 

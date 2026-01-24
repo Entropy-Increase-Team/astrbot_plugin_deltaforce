@@ -1,8 +1,10 @@
-﻿{{extend commonLayout}}
-{{block 'css'}}
-<link rel="stylesheet" type="text/css" href="Template/weeklyReport/weeklyReport.css"/>
-{{/block}}
-{{block 'main'}}
+﻿{% extends "common/common.html" %}
+
+{% block css %}
+<link rel="stylesheet" type="text/css" href="weeklyReport/weeklyReport.css"/>
+{% endblock %}
+
+{% block main %}
 <div class="container">
     <!-- 背景装饰层 -->
     <div class="bg-grid"></div>
@@ -17,101 +19,101 @@
         <div class="header-right">
             <div class="user-info">
                 <div class="user-name-row">
-                    <div class="user-name">{{userName}}</div>
+                    <div class="user-name">{{ userName }}</div>
                 </div>
-                {{if date}}
-                <div class="report-date">周报日期: {{date.slice(0, 4)}}-{{date.slice(4, 6)}}-{{date.slice(6, 8)}}</div>
-                {{/if}}
+                {% if date %}
+                <div class="report-date">周报日期: {{ date[0:4] }}-{{ date[4:6] }}-{{ date[6:8] }}</div>
+                {% endif %}
             </div>
             <div class="avatar-wrapper">
-                <img src="{{userAvatar}}" alt="Avatar" data-qq-avatar="{{qqAvatarUrl}}" onerror="if(this.dataset.qqAvatar){this.src=this.dataset.qqAvatar;this.onerror=null;}" />
+                <img src="{{ userAvatar }}" alt="Avatar" data-qq-avatar="{{ qqAvatarUrl }}" onerror="if(this.dataset.qqAvatar){this.src=this.dataset.qqAvatar;this.onerror=null;}" />
             </div>
         </div>
     </div>
 
-    {{if solData && !solData.isEmpty}}
+    {% if solData %}
     <!-- 烽火地带数据看板 -->
     <div class="dashboard-section">
         <div class="dashboard-grid">
             <div class="data-node highlight">
                 <div class="node-label">总对局 / TOTAL MATCHES</div>
-                <span class="node-value large">{{solData.total_sol_num || 0}}</span>
+                <span class="node-value large">{{ solData.total_sol_num | default(0) }}</span>
             </div>
             <div class="data-node highlight">
                 <div class="node-label">撤离 / EVACUATED</div>
-                <span class="node-value large">{{solData.total_exacuation_num || 0}}</span>
+                <span class="node-value large">{{ solData.total_exacuation_num | default(0) }}</span>
             </div>
             <div class="data-node highlight">
                 <div class="node-label">百万撤离 / MILLION+ EVAC</div>
-                <span class="node-value large">{{solData.GainedPrice_overmillion_num || 0}}</span>
+                <span class="node-value large">{{ solData.GainedPrice_overmillion_num | default(0) }}</span>
             </div>
             <div class="data-node highlight">
                 <div class="node-label">死亡 / ELIMINATED</div>
-                <span class="node-value large">{{solData.total_Death_Count || 0}}</span>
+                <span class="node-value large">{{ solData.total_Death_Count | default(0) }}</span>
             </div>
             <div class="data-node highlight">
                 <div class="node-label">玩家击杀 / PLAYER KILLS</div>
-                <span class="node-value">{{solData.total_Kill_Player || 0}}</span>
+                <span class="node-value">{{ solData.total_Kill_Player | default(0) }}</span>
             </div>
             <div class="data-node highlight">
                 <div class="node-label">AI击杀 / AI KILLS</div>
-                <span class="node-value">{{solData.total_Kill_AI || 0}}</span>
+                <span class="node-value">{{ solData.total_Kill_AI | default(0) }}</span>
             </div>
             <div class="data-node highlight">
                 <div class="node-label">BOSS击杀 / BOSS KILLS</div>
-                <span class="node-value">{{solData.total_Kill_Boss || 0}}</span>
+                <span class="node-value">{{ solData.total_Kill_Boss | default(0) }}</span>
             </div>
             <div class="data-node highlight">
                 <div class="node-label">段位 / RANK</div>
                 <div class="rank-display">
-                    {{if solData.rankImagePath}}
-                    <img src="{{solData.rankImagePath}}" class="rank-img" alt="{{solData.rankName}}" onerror="this.style.display='none';" />
-                    {{/if}}
-                    <span class="node-value">{{solData.rankName || '-'}}</span>
+                    {% if solData.rankImagePath %}
+                    <img src="{{ solData.rankImagePath }}" class="rank-img" alt="{{ solData.rankName }}" onerror="this.style.display='none';" />
+                    {% endif %}
+                    <span class="node-value">{{ solData.rankName | default('-') }}</span>
                 </div>
             </div>
         </div>
     </div>
 
     <!-- 资产趋势 -->
-    {{if solData.assetTrend}}
+    {% if solData.assetTrend %}
     <div class="section-block">
         <div class="section-header">
             <span class="dot"></span> 资产趋势 / ASSET TREND
         </div>
         <div class="chart-container">
             <div class="line-chart-wrapper">
-                <svg class="line-chart-svg" viewBox="0 0 {{solData.assetTrend.chartWidth}} {{solData.assetTrend.chartHeight}}" preserveAspectRatio="xMidYMid meet">
-                    <path class="line-chart-path" d="{{solData.assetTrend.pathData}}" 
+                <svg class="line-chart-svg" viewBox="0 0 {{ solData.assetTrend.chartWidth }} {{ solData.assetTrend.chartHeight }}" preserveAspectRatio="xMidYMid meet">
+                    <path class="line-chart-path" d="{{ solData.assetTrend.pathData }}" 
                           fill="none" stroke="#0FF796" stroke-width="3" 
                           stroke-linecap="round" stroke-linejoin="round"/>
-                    {{each solData.assetTrend.allDays point}}
+                    {% for point in solData.assetTrend.allDays %}
                     <g class="line-chart-point-group">
-                        <circle class="line-chart-point" cx="{{point.x}}" cy="{{point.y}}" 
+                        <circle class="line-chart-point" cx="{{ point.x }}" cy="{{ point.y }}" 
                                 r="5" fill="#0FF796" stroke="#0a0a0a" stroke-width="2"/>
-                        <text class="line-chart-value-text" x="{{point.x}}" y="{{point.y}}" 
+                        <text class="line-chart-value-text" x="{{ point.x }}" y="{{ point.y }}" 
                               text-anchor="middle" dy="-18" 
                               font-size="14" font-weight="800" 
                               font-family="Arial, sans-serif" dominant-baseline="middle">
-                            {{point.price}}
+                            {{ point.price }}
                         </text>
                     </g>
-                    {{/each}}
+                    {% endfor %}
                 </svg>
                 <div class="line-chart-labels">
-                    {{each solData.assetTrend.allDays point}}
-                    <div class="line-chart-label-item" style="left: {{point.xPercent}}%">
-                        <span class="line-chart-label">{{point.dayName}}</span>
+                    {% for point in solData.assetTrend.allDays %}
+                    <div class="line-chart-label-item" style="left: {{ point.xPercent }}%">
+                        <span class="line-chart-label">{{ point.dayName }}</span>
                     </div>
-                    {{/each}}
+                    {% endfor %}
                 </div>
             </div>
             <div class="chart-summary">
-                <span class="chart-summary-text">{{solData.assetTrend.startPrice}} ➔ {{solData.assetTrend.endPrice}}</span>
+                <span class="chart-summary-text">{{ solData.assetTrend.startPrice }} ➔ {{ solData.assetTrend.endPrice }}</span>
             </div>
         </div>
     </div>
-    {{/if}}
+    {% endif %}
 
     <!-- 资产统计 -->
     <div class="section-block">
@@ -121,16 +123,16 @@
         <div class="dashboard-grid asset-grid">
             <div class="data-node highlight asset-card">
                 <div class="node-label">资产净增 / NET INCREASE</div>
-                <span class="node-value large">{{solData.rise_Price || 0}}</span>
-                <div class="node-detail">(总收益 {{solData.Gained_Price || 0}} / 总消费 {{solData.consume_Price || 0}})</div>
+                <span class="node-value large">{{ solData.rise_Price | default(0) }}</span>
+                <div class="node-detail">(总收益 {{ solData.Gained_Price | default(0) }} / 总消费 {{ solData.consume_Price | default(0) }})</div>
             </div>
-            {{if solData.profitRatio}}
+            {% if solData.profitRatio %}
             <div class="data-node highlight asset-card">
                 <div class="node-label">赚损比 / PROFIT RATIO</div>
-                <span class="node-value large">{{solData.profitRatio}}</span>
+                <span class="node-value large">{{ solData.profitRatio }}</span>
                 <div class="node-detail">(收益/消费)</div>
             </div>
-            {{/if}}
+            {% endif %}
         </div>
     </div>
 
@@ -142,35 +144,35 @@
         <div class="dashboard-grid">
             <div class="data-node highlight">
                 <div class="node-label">任务 / QUESTS</div>
-                <span class="node-value large">{{solData.total_Quest_num || 0}}</span>
+                <span class="node-value large">{{ solData.total_Quest_num | default(0) }}</span>
             </div>
             <div class="data-node highlight">
                 <div class="node-label">使用钥匙 / KEYS USED</div>
-                <span class="node-value large">{{solData.use_Keycard_num || 0}}</span>
+                <span class="node-value large">{{ solData.use_Keycard_num | default(0) }}</span>
             </div>
             <div class="data-node highlight">
                 <div class="node-label">破译 / DECRYPTIONS</div>
-                <span class="node-value large">{{solData.Mandel_brick_num || 0}}</span>
+                <span class="node-value large">{{ solData.Mandel_brick_num | default(0) }}</span>
             </div>
             <div class="data-node highlight">
                 <div class="node-label">搜鸟巢 / BIRD NESTS</div>
-                <span class="node-value large">{{solData.search_Birdsnest_num || 0}}</span>
+                <span class="node-value large">{{ solData.search_Birdsnest_num | default(0) }}</span>
             </div>
             <div class="data-node highlight">
                 <div class="node-label">里程 / MILEAGE</div>
-                <span class="node-value highlight-green">{{solData.mileage || 0}}km</span>
+                <span class="node-value highlight-green">{{ solData.mileage | default(0) }}km</span>
             </div>
             <div class="data-node highlight">
                 <div class="node-label">救援 / RESCUES</div>
-                <span class="node-value large">{{solData.total_Rescue_num || 0}}</span>
+                <span class="node-value large">{{ solData.total_Rescue_num | default(0) }}</span>
             </div>
             <div class="data-node highlight">
                 <div class="node-label">被鳄鱼偷袭 / CROCODILE ATTACKS</div>
-                <span class="node-value large">{{solData.Kill_ByCrocodile_num || 0}}</span>
+                <span class="node-value large">{{ solData.Kill_ByCrocodile_num | default(0) }}</span>
             </div>
             <div class="data-node highlight">
                 <div class="node-label">游戏时长 / GAME TIME</div>
-                <span class="node-value highlight-green">{{solData.gameTime || '-'}}</span>
+                <span class="node-value highlight-green">{{ solData.gameTime | default('-') }}</span>
             </div>
         </div>
     </div>
@@ -181,259 +183,101 @@
             <span class="dot"></span> 常玩内容 / FAVORITE CONTENT
         </div>
         <div class="favorite-grid">
-            {{if solData.mostUsedMapImagePath}}
+            {% if solData.mostUsedMapImagePath %}
             <div class="favorite-card">
-                <div class="favorite-bg" style="background-image: url('{{solData.mostUsedMapImagePath}}');"></div>
+                <div class="favorite-bg" style="background-image: url('{{ solData.mostUsedMapImagePath }}');"></div>
                 <div class="favorite-content">
                     <div class="favorite-label">常玩地图 / FAVORITE MAP</div>
                 </div>
             </div>
-            {{/if}}
-            {{if solData.mostUsedOperatorImagePath}}
+            {% endif %}
+            {% if solData.mostUsedOperatorImagePath %}
             <div class="favorite-card">
-                <div class="favorite-bg" style="background-image: url('{{solData.mostUsedOperatorImagePath}}');"></div>
+                <div class="favorite-bg" style="background-image: url('{{ solData.mostUsedOperatorImagePath }}');"></div>
                 <div class="favorite-content">
                     <div class="favorite-label">常玩干员 / FAVORITE OPERATOR</div>
                 </div>
             </div>
-            {{/if}}
+            {% endif %}
         </div>
     </div>
+    {% endif %}
 
-    <!-- 高价值物资 -->
-    {{if solData.highPriceItems && solData.highPriceItems.length > 0}}
-    <div class="section-block">
-        <div class="section-header">
-            <span class="dot"></span> 高价值物资 TOP 5 / HIGH-VALUE ITEMS
+    {% if mpData %}
+    <!-- 全面战场数据 -->
+    <div class="section-block mp-section">
+         <div class="section-header">
+            <span class="dot"></span> 全面战场 / BATTLEFIELD
         </div>
-        <div class="asset-list">
-            {{each solData.highPriceItems item}}
-            <div class="asset-item">
-                <div class="asset-img-box">
-                    {{if item.imagePath}}
-                    <img src="{{item.imagePath}}" alt="{{item.name}}" onerror="this.style.display='none';" />
-                    {{/if}}
-                </div>
-                <div class="asset-info">
-                    <div class="asset-name">{{item.name || '未知物品'}}</div>
-                    <div class="asset-meta">
-                        <span class="asset-price">{{item.price}}</span>
-                    </div>
-                </div>
-            </div>
-            {{/each}}
-        </div>
-    </div>
-    {{/if}}
-
-    <!-- 干员使用详情 -->
-    {{if solData.operators && solData.operators.length > 0}}
-    <div class="section-block">
-        <div class="section-header">
-            <span class="dot"></span> 干员使用详情 / OPERATOR USAGE
-        </div>
-        <div class="operator-list">
-            {{each solData.operators op}}
-            <div class="operator-item">
-                <div class="operator-img-box">
-                    {{if op.imagePath}}
-                    <img src="{{op.imagePath}}" alt="{{op.name}}" onerror="this.style.display='none';" />
-                    {{/if}}
-                </div>
-                <div class="operator-info">
-                    <div class="operator-name">{{op.name || '未知干员'}}</div>
-                    <div class="operator-meta">使用场次: {{op.count}}场</div>
-                </div>
-            </div>
-            {{/each}}
-        </div>
-    </div>
-    {{/if}}
-
-    <!-- 地图使用详情 -->
-    {{if solData.maps && solData.maps.length > 0}}
-    <div class="section-block">
-        <div class="section-header">
-            <span class="dot"></span> 地图使用详情 / MAP USAGE
-        </div>
-        <div class="map-list">
-            <div class="map-row">
-                {{each solData.maps map}}
-                <div class="map-card">
-                    {{if map.imagePath}}
-                    <img src="{{map.imagePath}}" class="map-bg" alt="{{map.name}}" onerror="this.style.display='none';" />
-                    {{/if}}
-                    <div class="map-content">
-                        <div class="map-name">{{map.name || '未知地图'}}</div>
-                        <div class="map-stats">对局: {{map.count}}场</div>
-                    </div>
-                </div>
-                {{/each}}
-            </div>
-        </div>
-    </div>
-    {{/if}}
-
-    <!-- 队友协作 -->
-    {{if solData.teammates && solData.teammates.length > 0}}
-    <div class="section-block">
-        <div class="section-header">
-            <span class="dot"></span> 队友协作 / TEAMMATES
-        </div>
-        <div class="teammate-list">
-            {{each solData.teammates teammate}}
-            <div class="teammate-item">
-                <div class="teammate-avatar-box">
-                    {{if teammate.avatar}}
-                    <img src="{{teammate.avatar}}" alt="{{teammate.name}}" onerror="this.src='imgs/others/default_avatar.png'" />
-                    {{/if}}
-                </div>
-                <div class="teammate-info">
-                    <div class="teammate-name">{{teammate.name}}</div>
-                    <div class="teammate-stats">
-                        <div class="teammate-stat">对局: {{teammate.total_sol_num}} | 撤离: {{teammate.escape1}}</div>
-                    </div>
-                </div>
-            </div>
-            {{/each}}
-        </div>
-    </div>
-    {{/if}}
-    {{/if}}
-
-    {{if mpData && !mpData.isEmpty}}
-    <!-- 全面战场数据看板 -->
-    <div class="dashboard-section">
         <div class="dashboard-grid mp-grid">
-            <div class="data-node highlight">
-                <div class="node-label">总对局 / TOTAL MATCHES</div>
-                <span class="node-value large">{{mpData.total_num || 0}}</span>
+             <div class="data-node highlight">
+                <div class="node-label">总对局 / MATCHES</div>
+                <span class="node-value large">{{ mpData.total_inum | default(0) }}</span>
             </div>
-            <div class="data-node highlight">
-                <div class="node-label">胜场 / VICTORIES</div>
-                <span class="node-value large">{{mpData.win_num || 0}}</span>
+             <div class="data-node highlight">
+                <div class="node-label">胜场 / WINS</div>
+                <span class="node-value large">{{ mpData.total_win_inum | default(0) }}</span>
             </div>
-            <div class="data-node highlight">
-                <div class="node-label">胜率 / WIN RATE</div>
-                <span class="node-value large">{{mpData.winRate || '0%'}}</span>
-            </div>
-            <div class="data-node highlight">
-                <div class="node-label">段位 / RANK</div>
-                <div class="rank-display">
-                    {{if mpData.rankImagePath}}
-                    <img src="{{mpData.rankImagePath}}" class="rank-img" alt="{{mpData.rankName}}" onerror="this.style.display='none';" />
-                    {{/if}}
-                    <span class="node-value">{{mpData.rankName || '-'}}</span>
-                </div>
-            </div>
-            <div class="data-node highlight">
+             <div class="data-node highlight">
                 <div class="node-label">击杀 / KILLS</div>
-                <span class="node-value large">{{mpData.Kill_Num || 0}}</span>
+                <span class="node-value highlight-green">{{ mpData.total_killnum | default(0) }}</span>
+            </div>
+             <div class="data-node highlight">
+                <div class="node-label">阵亡 / DEATHS</div>
+                <span class="node-value large">{{ mpData.total_deathnum | default(0) }}</span>
+            </div>
+             <div class="data-node highlight">
+                <div class="node-label">助攻 / ASSISTS</div>
+                <span class="node-value large">{{ mpData.total_assistnum | default(0) }}</span>
+            </div>
+             <div class="data-node highlight">
+                <div class="node-label">总分 / SCORE</div>
+                <span class="node-value large">{{ mpData.total_scorenum | default(0) }}</span>
             </div>
             <div class="data-node highlight">
-                <div class="node-label">最高连杀 / MAX STREAK</div>
-                <span class="node-value large">{{mpData.continuous_Kill_Num || 0}}</span>
-            </div>
-            <div class="data-node highlight">
-                <div class="node-label">总分 / TOTAL SCORE</div>
-                <span class="node-value large">{{mpData.total_score || 0}}</span>
-            </div>
-            <div class="data-node highlight">
-                <div class="node-label">命中率 / HIT RATE</div>
-                <span class="node-value large">{{mpData.hitRate || '0%'}}</span>
-                <div class="node-detail">({{mpData.Hit_Bullet_Num || 0}}/{{mpData.Consume_Bullet_Num || 0}})</div>
-            </div>
-            <div class="data-node highlight">
-                <div class="node-label">支援呼叫 / SUPPORT CALLS</div>
-                <span class="node-value">{{mpData.SBattle_Support_UseNum || 0}}次</span>
-            </div>
-            <div class="data-node highlight">
-                <div class="node-label">支援消耗 / SUPPORT COST</div>
-                <span class="node-value">{{mpData.SBattle_Support_CostScore || 0}}分</span>
+                <div class="node-label">时长 / TIME</div>
+                <span class="node-value large">{{ mpData.total_time | default(0) }}</span>
             </div>
         </div>
+        
+        <!-- 队友列表 -->
+        {% if mpData.teammates and mpData.teammates | length > 0 %}
+        <div class="teammates-box">
+            <div class="section-header small">常玩队友 / TEAMMATES</div>
+            <div class="teammates-list">
+                {% for mate in mpData.teammates %}
+                <div class="teammate-item">
+                    <div class="teammate-name">{{ mate.name }}</div>
+                    <div class="teammate-count">{{ mate.count }} 局</div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
     </div>
+    {% endif %}
 
-    <!-- 全面战场常玩内容 -->
+    <!-- 队友列表 (烽火地带) -->
+    {% if solData and solData.teammates and solData.teammates | length > 0 %}
     <div class="section-block">
         <div class="section-header">
-            <span class="dot"></span> 常玩内容 / FAVORITE CONTENT
+            <span class="dot"></span> 烽火队友 / TEAMMATES (HAZARD)
         </div>
-        <div class="favorite-grid">
-            {{if mpData.mostUsedMapImagePath}}
-            <div class="favorite-card">
-                <div class="favorite-bg" style="background-image: url('{{mpData.mostUsedMapImagePath}}');"></div>
-                <div class="favorite-content">
-                    <div class="favorite-label">常玩地图 / FAVORITE MAP</div>
+        <div class="teammates-list">
+             {% for mate in solData.teammates %}
+                <div class="teammate-item">
+                    <div class="teammate-name">{{ mate.name }}</div>
+                    <div class="teammate-count">{{ mate.count }} 局</div>
                 </div>
-            </div>
-            {{/if}}
-            {{if mpData.mostUsedOperatorImagePath}}
-            <div class="favorite-card">
-                <div class="favorite-bg" style="background-image: url('{{mpData.mostUsedOperatorImagePath}}');"></div>
-                <div class="favorite-content">
-                    <div class="favorite-label">常玩干员 / FAVORITE OPERATOR</div>
-                </div>
-            </div>
-            {{/if}}
+            {% endfor %}
         </div>
     </div>
+    {% endif %}
 
-    <!-- 全面战场地图使用详情 -->
-    {{if mpData.maps && mpData.maps.length > 0}}
-    <div class="section-block">
-        <div class="section-header">
-            <span class="dot"></span> 地图使用详情 / MAP USAGE
-        </div>
-        <div class="map-list">
-            <div class="map-row">
-                {{each mpData.maps map}}
-                <div class="map-card">
-                    {{if map.imagePath}}
-                    <img src="{{map.imagePath}}" class="map-bg" alt="{{map.name}}" onerror="this.style.display='none';" />
-                    {{/if}}
-                    <div class="map-content">
-                        <div class="map-name">{{map.name || '未知地图'}}</div>
-                        <div class="map-stats">对局: {{map.count}}场</div>
-                    </div>
-                </div>
-                {{/each}}
-            </div>
-        </div>
+    <!-- 底部 -->
+    <div class="footer">
+        Data source: Official API | Powered by Delta-Force-Plugin
     </div>
-    {{/if}}
-
-    <!-- 全面战场队友协作 -->
-    {{if mpData.teammates && mpData.teammates.length > 0}}
-    <div class="section-block">
-        <div class="section-header">
-            <span class="dot"></span> 队友协作 / TEAMMATES
-        </div>
-        <div class="teammate-list">
-            {{each mpData.teammates teammate}}
-            <div class="teammate-item">
-                <div class="teammate-avatar-box">
-                    {{if teammate.avatar}}
-                    <img src="{{teammate.avatar}}" alt="{{teammate.name}}" onerror="this.src='imgs/others/default_avatar.png'" />
-                    {{/if}}
-                </div>
-                <div class="teammate-info">
-                    <div class="teammate-name">{{teammate.name}}</div>
-                    <div class="teammate-stats">
-                        <div class="teammate-stat">总览: {{teammate.total_num}}场 | {{teammate.win_num}}胜 ({{teammate.winRate}})</div>
-                        <div class="teammate-stat">KDA: {{teammate.kda}}</div>
-                        <div class="teammate-stat">得分: {{teammate.sumScore}} (最高 {{teammate.maxScore}})</div>
-                    </div>
-                </div>
-            </div>
-            {{/each}}
-        </div>
-    </div>
-    {{/if}}
-    {{/if}}
-
 </div>
-{{/block}}
-{{block 'footer'}}
-{{/block}}
+{% endblock %}
 

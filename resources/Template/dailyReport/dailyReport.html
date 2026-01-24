@@ -1,9 +1,11 @@
-﻿{{extend commonLayout}}
-{{block 'css'}}
+﻿{% extends "common/common.html" %}
+
+{% block css %}
 <link rel="stylesheet" type="text/css" href="Template/dailyReport/dailyReport.css"/>
-{{/block}}
-{{block 'main'}}
-<div class="container {{if type === 'daily' && !((mpDetail && solDetail && solDetail.recentGainDate))}}single-mode{{/if}}">
+{% endblock %}
+
+{% block main %}
+<div class="container {% if reportType == 'daily' and not ((mpData and mpData.hasData) and (solData and solData.hasData)) %}single-mode{% endif %}">
     <!-- 整体背景图片 -->
     <img class="bg-image" src="imgs/others/loading13.png" />
     
@@ -12,198 +14,194 @@
         <div class="header-content">
             <div class="header-left">
                 <img class="game-logo" src="imgs/others/logo.png" alt="三角洲行动" />
-            {{if type === 'profit'}}
+            {% if reportType == 'profit' %}
             <div class="title">收益TOP3物资</div>
-            {{/if}}
+            {% endif %}
             </div>
             <div class="header-right">
                 <div class="user-avatar-wrapper">
-                    <img class="user-avatar" src="{{userAvatar}}" alt="用户头像" data-qq-avatar="{{qqAvatarUrl}}" onerror="if(this.dataset.qqAvatar){this.src=this.dataset.qqAvatar;this.onerror=null;}else{this.style.display='none';}" />
+                    <img class="user-avatar" src="{{ userAvatar }}" alt="用户头像" data-qq-avatar="{{ qqAvatarUrl }}" onerror="if(this.dataset.qqAvatar){this.src=this.dataset.qqAvatar;this.onerror=null;}else{this.style.display='none';}" />
                 </div>
                 <div class="header-meta">
-                    {{if userName}}
-                    <span class="user-name">{{userName}}</span>
-                    {{/if}}
-                    {{if type === 'daily'}}
-                        {{if currentDate}}
-                        <span class="report-date">{{currentDate}}</span>
-                        {{/if}}
-                    {{else if type === 'profit'}}
-                        {{if profitData && profitData.gainDate}}
-                        <span class="report-date">{{profitData.gainDate}}</span>
-                        {{/if}}
-                    {{/if}}
+                    {% if userName %}
+                    <span class="user-name">{{ userName }}</span>
+                    {% endif %}
+                    {% if reportType == 'daily' %}
+                        {% if dateStr %}
+                        <span class="report-date">{{ dateStr }}</span>
+                        {% endif %}
+                    {% elif reportType == 'profit' %}
+                        {% if profitData and profitData.gainDate %}
+                        <span class="report-date">{{ profitData.gainDate }}</span>
+                        {% endif %}
+                    {% endif %}
                 </div>
             </div>
         </div>
     </div>
 
     <div class="content">
-        {{if type === 'profit'}}
+        {% if reportType == 'profit' %}
         <!-- 昨日收益模式 -->
         <div class="profit-section">
-            {{if profitData.topItems && profitData.topItems.length > 0}}
+            {% if profitData.topItems and profitData.topItems | length > 0 %}
             <div class="items-list">
-                {{each profitData.topItems item index}}
+                {% for item in profitData.topItems %}
                 <div class="item-card">
-                    <div class="item-rank">#{{index + 1}}</div>
-                    {{if item.imageUrl}}
+                    <div class="item-rank">#{{ loop.index }}</div>
+                    {% if item.imageUrl %}
                     <div class="item-image-wrapper">
-                        <img class="item-image" src="{{item.imageUrl}}" alt="{{item.objectName}}" onerror="this.style.display='none'; this.parentElement.style.display='none';" />
+                        <img class="item-image" src="{{ item.imageUrl }}" alt="{{ item.objectName }}" onerror="this.style.display='none'; this.parentElement.style.display='none';" />
                     </div>
-                    {{/if}}
+                    {% endif %}
                     <div class="item-info">
-                        <div class="item-name">{{item.objectName}}</div>
-                        <div class="item-count">×{{item.count}}</div>
+                        <div class="item-name">{{ item.objectName }}</div>
+                        <div class="item-count">×{{ item.count }}</div>
                     </div>
-                    <div class="item-price">{{item.price}}</div>
+                    <div class="item-price">{{ item.price }}</div>
                 </div>
-                {{/each}}
+                {% endfor %}
             </div>
             <div class="total-gain">
-                <span class="label">{{profitData.gainDate || '昨日'}}总收益:</span>
-                <span class="value {{if profitData.recentGain >= 0}}positive{{else}}negative{{/if}}">
-                    {{if profitData.recentGain >= 0}}+{{/if}}{{profitData.recentGain}}
+                <span class="label">{{ profitData.gainDate | default('昨日') }}总收益:</span>
+                <span class="value {% if profitData.recentGain >= 0 %}positive{% else %}negative{% endif %}">
+                    {% if profitData.recentGain >= 0 %}+{% endif %}{{ profitData.recentGain }}
                 </span>
             </div>
-            {{else}}
+            {% else %}
             <div class="no-data">
                 <p>昨日未带出任何高价值物资</p>
                 <div class="total-gain">
-                    <span class="label">{{profitData.gainDate || '昨日'}}总收益:</span>
-                    <span class="value">{{profitData.recentGain}}</span>
+                    <span class="label">{{ profitData.gainDate | default('昨日') }}总收益:</span>
+                    <span class="value">{{ profitData.recentGain }}</span>
                 </div>
             </div>
-            {{/if}}
+            {% endif %}
         </div>
-        {{else}}
+        {% else %}
         <!-- 日报模式 -->
-        <div class="report-grid {{if (solDetail || (!mode || mode === 'sol')) && (mpDetail || (!mode || mode === 'mp'))}}two-cards{{else}}single-card{{/if}}">
-            {{if solDetail || (!mode || mode === 'sol')}}
+        <!-- Logic for two-cards class: if both solData + mpData exist (or not filtered) -->
+        <div class="report-grid {% if (solData) and (mpData) %}two-cards{% else %}single-card{% endif %}">
+            
+            {% if solData %}
             <!-- 烽火地带卡片 -->
             <div class="mode-card sol-card">
                 <div class="card-header" style="background-image: url('imgs/others/fire_limit_normal.png');">
                     <div class="mode-title">
                         烽火地带
-                        {{if solDetail && solDetail.recentGainDate}}
-                        <span class="mode-date">{{solDetail.recentGainDate}}</span>
-                        {{/if}}
+                        {% if solData.date %}
+                        <span class="mode-date">{{ solData.date }}</span>
+                        {% endif %}
                     </div>
                 </div>
                 <div class="card-body">
-                    {{if solDetail && solDetail.recentGainDate && !solDetail.isEmpty}}
+                    {% if solData.hasData %}
                     <div class="stat-item full-width highlight-large">
                         <span class="stat-label-overlay">最近带出总价值</span>
-                        <span class="stat-value">{{solDetail.recentGain}}</span>
+                        <span class="stat-value">{{ solData.totalGain }}</span>
                     </div>
-                    {{if solDetail.topItems && solDetail.topItems.length > 0}}
+                    {% if solData.topItems and solData.topItems | length > 0 %}
                     <div class="items-section">
                         <div class="items-title">近期高价值物资</div>
                         <div class="items-list">
-                            {{each solDetail.topItems item}}
+                            {% for item in solData.topItems %}
                             <div class="item-row">
-                                {{if item.imageUrl}}
+                                {% if item.imageUrl %}
                                 <div class="item-image-wrapper">
-                                    <img class="item-image" src="{{item.imageUrl}}" alt="{{item.objectName}}" onerror="this.style.display='none'" />
+                                    <img class="item-image" src="{{ item.imageUrl }}" alt="{{ item.objectName }}" onerror="this.style.display='none'" />
                                 </div>
-                                {{/if}}
-                                <span class="item-name">{{item.objectName}}</span>
-                                <span class="item-price">{{item.price}}</span>
+                                {% endif %}
+                                <span class="item-name">{{ item.objectName }}</span>
+                                <span class="item-price">{{ item.price }}</span>
                             </div>
-                            {{/each}}
+                            {% endfor %}
                         </div>
                     </div>
-                    {{/if}}
-                    {{else}}
+                    {% endif %}
+                    {% else %}
                     <div class="no-data-text">暂无数据</div>
-                    {{/if}}
+                    {% endif %}
                 </div>
             </div>
-            {{/if}}
+            {% endif %}
 
-            {{if mpDetail || (!mode || mode === 'mp')}}
+            {% if mpData %}
             <!-- 全面战场卡片 -->
             <div class="mode-card mp-card">
                 <div class="card-header" style="background-image: url('imgs/others/allwar_limit_normal.png');">
                     <div class="mode-title">
                         全面战场
-                        {{if mpDetail && mpDetail.recentDate && mpDetail.recentDate.trim() !== ''}}
-                        <span class="mode-date">{{mpDetail.recentDate}}</span>
-                        {{/if}}
+                        {% if mpData.date %}
+                        <span class="mode-date">{{ mpData.date }}</span>
+                        {% endif %}
                     </div>
                 </div>
                 <div class="card-body">
-                    {{if mpDetail && mpDetail.recentDate && mpDetail.recentDate.trim() !== '' && !mpDetail.isEmpty}}
+                    {% if mpData.hasData %}
                     <div class="stats-overview">
                         <div class="stat-item">
                             <span class="stat-label-overlay">总对局</span>
-                            <span class="stat-value">{{mpDetail.totalFightNum}}</span>
+                            <span class="stat-value">{{ mpData.totalFightNum }}</span>
                         </div>
                         <div class="stat-item">
                             <span class="stat-label-overlay">胜利</span>
-                            <span class="stat-value highlight">{{mpDetail.totalWinNum}}</span>
+                            <span class="stat-value highlight">{{ mpData.totalWinNum }}</span>
                         </div>
                         <div class="stat-item">
                             <span class="stat-label-overlay">总击杀</span>
-                            <span class="stat-value">{{mpDetail.totalKillNum}}</span>
+                            <span class="stat-value">{{ mpData.totalKillNum }}</span>
                         </div>
                         <div class="stat-item">
                             <span class="stat-label-overlay">总得分</span>
-                            <span class="stat-value highlight">{{mpDetail.totalScore}}</span>
+                            <span class="stat-value highlight">{{ mpData.totalScore }}</span>
                         </div>
                     </div>
                     <div class="stats-overview">
                         <div class="stat-item stat-item-card">
-                            <div class="mp-card-item" {{if mpDetail.operatorImage}}style="background-image: url('{{mpDetail.operatorImage}}');"{{/if}}>
+                            <div class="mp-card-item" {% if mpData.operatorImage %}style="background-image: url('{{ mpData.operatorImage }}');"{% endif %}>
                                 <span class="stat-label-overlay">最常用干员</span>
                             </div>
                         </div>
                     </div>
-                    {{if mpDetail.bestMatch}}
+                    {% if mpData.bestMatch %}
                     <div class="best-match">
                         <div class="best-match-header">
                             <div class="best-match-title">当日最佳</div>
                         </div>
-                        {{if mpDetail.bestMatch.mapImage}}
-                        <div class="best-match-bg" style="background-image: url('{{mpDetail.bestMatch.mapImage}}');"></div>
-                        {{/if}}
+                        {% if mpData.bestMatch.mapImage %}
+                        <div class="best-match-bg" style="background-image: url('{{ mpData.bestMatch.mapImage }}');"></div>
+                        {% endif %}
                         <div class="best-match-content">
                             <div class="best-match-row">
                                 <span class="best-label">地图:</span>
-                                <span class="best-value">{{mpDetail.bestMatch.mapName}}</span>
+                                <span class="best-value">{{ mpData.bestMatch.mapName }}</span>
                             </div>
                             <div class="best-match-row">
                                 <span class="best-label">时间:</span>
-                                <span class="best-value">{{mpDetail.bestMatch.dtEventTime}}</span>
+                                <span class="best-value">{{ mpData.bestMatch.dtEventTime }}</span>
                             </div>
                             <div class="best-match-row">
                                 <span class="best-label">结果:</span>
-                                <span class="best-value {{if mpDetail.bestMatch.isWinner}}result-win{{else}}result-lose{{/if}}">
-                                    {{if mpDetail.bestMatch.isWinner}}胜利{{else}}失败{{/if}}
+                                <span class="best-value {% if mpData.bestMatch.isWinner %}result-win{% else %}result-lose{% endif %}">
+                                    {% if mpData.bestMatch.isWinner %}胜利{% else %}失败{% endif %}
                                 </span>
-                                <span class="kda">KDA: {{mpDetail.bestMatch.killNum}}/{{mpDetail.bestMatch.death}}/{{mpDetail.bestMatch.assist}}</span>
+                                <span class="kda">KDA: {{ mpData.bestMatch.killNum }}/{{ mpData.bestMatch.death }}/{{ mpData.bestMatch.assist }}</span>
                             </div>
                             <div class="best-match-row">
                                 <span class="best-label">得分:</span>
-                                <span class="best-value highlight">{{mpDetail.bestMatch.score}}</span>
+                                <span class="best-value highlight">{{ mpData.bestMatch.score }}</span>
                             </div>
                         </div>
                     </div>
-                    {{/if}}
-                    {{else}}
+                    {% endif %}
+                    {% else %}
                     <div class="no-data-text">暂无数据</div>
-                    {{/if}}
+                    {% endif %}
                 </div>
             </div>
-            {{/if}}
+            {% endif %}
         </div>
-        {{/if}}
-    </div>
-    
-    <!-- 页脚 -->
-    <div class="template-footer">
-        <div class="copyright-text">由 DeltaForce-Plugin-Yunzai 强力驱动</div>
+        {% endif %}
     </div>
 </div>
-{{/block}}
-{{block 'footer'}}{{/block}}
+{% endblock %}

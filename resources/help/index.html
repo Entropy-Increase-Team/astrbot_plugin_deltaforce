@@ -1,173 +1,76 @@
-{{extend defaultLayout}}
+{% extends "common/common.html" %}
 
-{{block 'css'}}
-<link rel="stylesheet" type="text/css" href="{{_res_path}}/help/index.css"/>
+{% block css %}
+<link rel="stylesheet" type="text/css" href="help/index.css"/>
 <style>
-  {{@style}}
+  {{ style | safe }}
 </style>
-{{/block}}
+{% endblock %}
 
-{{block 'main'}}
+{% block main %}
+
+{% macro render_group(group) %}
+    {% set list_len = group.list | length %}
+    <div class="cont-box">
+      <div class="help-group">{{ group.group }}</div>
+      {% if list_len > 0 %}
+        <div class="help-table">
+            {% for batch in group.list | batch(1) %}
+            <div class="tr">
+                {% for help in batch %}
+                <div class="td">
+                <span class="help-icon">{{ help.icon }}</span>
+                <strong class="help-title">{{ help.title }}</strong>
+                <span class="help-desc">{{ help.desc }}</span>
+                </div>
+                {% endfor %}
+            </div>
+            {% endfor %}
+        </div>
+      {% endif %}
+    </div>
+{% endmacro %}
 
 <div class="info-box">
-  <div class="head-box type{{bgType}}">
-    <div class="title">{{helpCfg.title||"使用帮助"}}</div>
-    <div class="label">{{helpCfg.subTitle || "DeltaForce-Plugin"}}</div>
+  <div class="head-box type{{ bgType }}">
+    <div class="title">{{ helpCfg.title | default("使用帮助") }}</div>
+    <div class="label">{{ helpCfg.subTitle | default("DeltaForce-Plugin") }}</div>
   </div>
 </div>
 
-{{if helpCfg.twoColumnLayout}}
-{{each topFullWidthGroups group}}
-{{set len = group?.list?.length || 0 }}
-<div class="cont-box">
-  <div class="help-group">{{group.group}}</div>
-  {{if len > 0}}
-  <div class="help-table">
-    <div class="tr">
-      {{each group.list help idx}}
-      <div class="td">
-        <span class="help-icon" style="{{@ help.css}}"></span>
-        <strong class="help-title">{{help.title}}</strong>
-        <span class="help-desc">{{help.desc}}</span>
-      </div>
-      {{set isRowEnd = (idx + 1) % colCount === 0}}
-      {{set isNotLast = idx < len - 1}}
-      {{if isRowEnd && isNotLast}}
+{% if twoColumnLayout %}
+  
+  {% if topFullWidthGroups %}
+    {% for group in topFullWidthGroups %}
+      {{ render_group(group) }}
+    {% endfor %}
+  {% endif %}
+
+  <div class="help-content-wrapper">
+    <div class="help-column">
+      {% for group in leftGroups %}
+        {{ render_group(group) }}
+      {% endfor %}
     </div>
-    <div class="tr">
-      {{/if}}
-      {{/each}}
-      <% const padding = (colCount - len % colCount) % colCount; %>
-      <% for(let i = 0; i < padding; i++) { %>
-        <div class="td"></div>
-      <% } %>
+    <div class="help-column">
+      {% for group in rightGroups %}
+        {{ render_group(group) }}
+      {% endfor %}
     </div>
   </div>
-  {{/if}}
-</div>
-{{/each}}
-<div class="help-content-wrapper">
-  <div class="help-column">
-    {{each leftGroups group}}
-    {{set len = group?.list?.length || 0 }}
-    <div class="cont-box">
-      <div class="help-group">{{group.group}}</div>
-      {{if len > 0}}
-      <div class="help-table">
-        <div class="tr">
-          {{each group.list help idx}}
-          <div class="td">
-            <span class="help-icon" style="{{@ help.css}}"></span>
-            <strong class="help-title">{{help.title}}</strong>
-            <span class="help-desc">{{help.desc}}</span>
-          </div>
-          {{set isRowEnd = (idx + 1) % colCount === 0}}
-          {{set isNotLast = idx < len - 1}}
-          {{if isRowEnd && isNotLast}}
-        </div>
-        <div class="tr">
-          {{/if}}
-          {{/each}}
-          <% const padding = (colCount - len % colCount) % colCount; %>
-          <% for(let i = 0; i < padding; i++) { %>
-            <div class="td"></div>
-          <% } %>
-        </div>
-      </div>
-      {{/if}}
-    </div>
-    {{/each}}
-  </div>
-  <div class="help-column">
-    {{each rightGroups group}}
-    {{set len = group?.list?.length || 0 }}
-    <div class="cont-box">
-      <div class="help-group">{{group.group}}</div>
-      {{if len > 0}}
-      <div class="help-table">
-        <div class="tr">
-          {{each group.list help idx}}
-          <div class="td">
-            <span class="help-icon" style="{{@ help.css}}"></span>
-            <strong class="help-title">{{help.title}}</strong>
-            <span class="help-desc">{{help.desc}}</span>
-          </div>
-          {{set isRowEnd = (idx + 1) % colCount === 0}}
-          {{set isNotLast = idx < len - 1}}
-          {{if isRowEnd && isNotLast}}
-        </div>
-        <div class="tr">
-          {{/if}}
-          {{/each}}
-          <% const padding = (colCount - len % colCount) % colCount; %>
-          <% for(let i = 0; i < padding; i++) { %>
-            <div class="td"></div>
-          <% } %>
-        </div>
-      </div>
-      {{/if}}
-    </div>
-    {{/each}}
-  </div>
-</div>
-{{each bottomFullWidthGroups group}}
-{{set len = group?.list?.length || 0 }}
-<div class="cont-box">
-  <div class="help-group">{{group.group}}</div>
-  {{if len > 0}}
-  <div class="help-table">
-    <div class="tr">
-      {{each group.list help idx}}
-      <div class="td">
-        <span class="help-icon" style="{{@ help.css}}"></span>
-        <strong class="help-title">{{help.title}}</strong>
-        <span class="help-desc">{{help.desc}}</span>
-      </div>
-      {{set isRowEnd = (idx + 1) % colCount === 0}}
-      {{set isNotLast = idx < len - 1}}
-      {{if isRowEnd && isNotLast}}
-    </div>
-    <div class="tr">
-      {{/if}}
-      {{/each}}
-      <% const padding = (colCount - len % colCount) % colCount; %>
-      <% for(let i = 0; i < padding; i++) { %>
-        <div class="td"></div>
-      <% } %>
-    </div>
-  </div>
-  {{/if}}
-</div>
-{{/each}}
-{{else}}
-{{each helpGroup group}}
-{{set len = group?.list?.length || 0 }}
-<div class="cont-box">
-  <div class="help-group">{{group.group}}</div>
-  {{if len > 0}}
-  <div class="help-table">
-    <div class="tr">
-      {{each group.list help idx}}
-      <div class="td">
-        <span class="help-icon" style="{{@ help.css}}"></span>
-        <strong class="help-title">{{help.title}}</strong>
-        <span class="help-desc">{{help.desc}}</span>
-      </div>
-      {{set isRowEnd = (idx + 1) % colCount === 0}}
-      {{set isNotLast = idx < len - 1}}
-      {{if isRowEnd && isNotLast}}
-    </div>
-    <div class="tr">
-      {{/if}}
-      {{/each}}
-      <% const padding = (colCount - len % colCount) % colCount; %>
-      <% for(let i = 0; i < padding; i++) { %>
-        <div class="td"></div>
-      <% } %>
-    </div>
-  </div>
-  {{/if}}
-</div>
-{{/each}}
-{{/if}}
-{{/block}}
+
+  {% if bottomFullWidthGroups %}
+    {% for group in bottomFullWidthGroups %}
+      {{ render_group(group) }}
+    {% endfor %}
+  {% endif %}
+
+{% else %}
+  
+  {% for group in helpGroups %}
+    {{ render_group(group) }}
+  {% endfor %}
+
+{% endif %}
+
+{% endblock %}

@@ -4,18 +4,18 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width">
   <link rel="shortcut icon" href="#" />
-  <link rel="stylesheet" type="text/css" href="Template/common/common.css"/>
+  <link rel="stylesheet" type="text/css" href="common/common.css"/>
   <title>delta-force-plugin</title>
-  {{block 'css'}}
-  {{/block}}
+  {% block css %}
+  {% endblock %}
 </head>
 <body>
-  {{block 'main'}}{{/block}}
-  {{block 'footer'}}
+  {% block main %}{% endblock %}
+  {% block footer %}
   <div class="template-footer">
     <div class="copyright-text">由 DeltaForce-Plugin-Yunzai 强力驱动</div>
   </div>
-  {{/block}}
+  {% endblock %}
 </body>
 </html>
 
