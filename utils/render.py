@@ -258,13 +258,13 @@ class Render:
             index: 背景图片索引（1-7），为 None 时随机选择
         
         Returns:
-            背景图片的相对路径
+            背景图片的 absolute file URI
         """
         import random
         if index is None:
             index = random.randint(1, 7)
         index = max(1, min(7, index))  # 限制范围
-        return f"imgs/background/bg2-{index}.webp"
+        return (cls.RESOURCES_PATH / f"imgs/background/bg2-{index}.webp").as_uri()
     
     @classmethod
     def get_rank_image(cls, rank_name: str, mode: str = 'sol') -> Optional[str]:
@@ -276,7 +276,7 @@ class Render:
             mode: 游戏模式 ('sol' 烽火地带 或 'mp'/'tdm' 全面战场)
         
         Returns:
-            段位图片的相对路径，未找到返回 None
+            段位图片的 absolute file URI，未找到返回 None
         """
         if not rank_name or '分数无效' in str(rank_name) or '未知' in str(rank_name):
             return None
@@ -321,7 +321,7 @@ class Render:
             logger.warning(f"[Render] 未找到段位映射: {clean_rank_name} (模式: {mode_key})")
             return None
         
-        return f"imgs/rank/{mode_key}/{rank_code}.webp"
+        return (cls.RESOURCES_PATH / f"imgs/rank/{mode_key}/{rank_code}.webp").as_uri()
 
 
 # 便捷函数

@@ -131,20 +131,25 @@ class SystemHandler(BaseHandler):
         mid = (len(help_groups) + 1) // 2
         left_groups = help_groups[:mid]
         right_groups = help_groups[mid:]
+
+        # 获取背景图片的绝对路径并转换为 file URI
+        # 这样可以确保 Playwright 能够正确加载本地图片
+        bg_path = Render.RESOURCES_PATH / "imgs" / "background" / "bg2-1.webp"
+        bg_uri = bg_path.as_uri()
         
         # 构建样式
-        # 确保 container 继承 body 的背景配置，或者直接在这里强制设置
-        # 注意：render.py 截图时可能只依据 .container 的大小，如果 .container 背景透明，底层 body 背景应该能透出来
-        # 但为了保险，我们给 .container 也设置背景，或者确保 CSS 变量传递正确
-        style = """
-        :root {
-            /* 修正背景图片路径 */
-            --bg-url: url('imgs/background/bg2-1.webp');
-            --container-bg-url: url('imgs/background/bg2-1.webp');
+        # 强制设置背景图片，并添加背景颜色作为回退
+        style = f"""
+        :root {{
+            --bg-url: url('{bg_uri}');
+            --container-bg-url: url('{bg_uri}');
             --icon-url: none;
             --primary-color: #ceb78b;
             --desc-color: #eee;
-        }
+        }}
+        body, .container {{
+            background-color: #222 !important; /* 防止图片加载失败时显示白底 */
+        }}
         """
         
         render_data = {
@@ -161,13 +166,14 @@ class SystemHandler(BaseHandler):
         }
         
         # 尝试渲染图片
+        # 增加高度以容纳更多指令，Playwright 会自动裁剪到实际内容
         yield await self.render_and_reply(
             event,
             'help/index.html',
             render_data,
             fallback_text=self._build_help_text(),
-            width=830,
-            height=1200
+            width=1000,
+            height=3000
         )
 
     def _build_help_text(self):

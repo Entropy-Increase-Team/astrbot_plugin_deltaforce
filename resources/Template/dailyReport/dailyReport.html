@@ -7,13 +7,13 @@
 {% block main %}
 <div class="container {% if reportType == 'daily' and not ((mpData and mpData.hasData) and (solData and solData.hasData)) %}single-mode{% endif %}">
     <!-- 整体背景图片 -->
-    <img class="bg-image" src="imgs/others/loading13.png" />
+    <img class="bg-image" src="{{_res_path}}imgs/others/loading13.png" />
     
     <!-- ========== 头部区域 ========== -->
     <div class="header">
         <div class="header-content">
             <div class="header-left">
-                <img class="game-logo" src="imgs/others/logo.png" alt="三角洲行动" />
+                <img class="game-logo" src="{{_res_path}}imgs/others/logo.png" alt="三角洲行动" />
             {% if reportType == 'profit' %}
             <div class="title">收益TOP3物资</div>
             {% endif %}
@@ -86,7 +86,7 @@
             {% if solData %}
             <!-- 烽火地带卡片 -->
             <div class="mode-card sol-card">
-                <div class="card-header" style="background-image: url('imgs/others/fire_limit_normal.png');">
+                <div class="card-header" style="background-image: url('{{_res_path}}imgs/others/fire_limit_normal.png');">
                     <div class="mode-title">
                         烽火地带
                         {% if solData.date %}
@@ -128,7 +128,7 @@
             {% if mpData %}
             <!-- 全面战场卡片 -->
             <div class="mode-card mp-card">
-                <div class="card-header" style="background-image: url('imgs/others/allwar_limit_normal.png');">
+                <div class="card-header" style="background-image: url('{{_res_path}}imgs/others/allwar_limit_normal.png');">
                     <div class="mode-title">
                         全面战场
                         {% if mpData.date %}

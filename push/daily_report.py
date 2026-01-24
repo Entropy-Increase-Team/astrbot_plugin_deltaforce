@@ -223,7 +223,7 @@ class DailyReportPush:
                 'dailyReport/dailyReport.html',
                 render_data,
                 width=1250,
-                height=1000
+                height=3000
             )
         except Exception as e:
             logger.error(f"[日报推送] 渲染图片失败: {e}")

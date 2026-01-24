@@ -263,7 +263,7 @@ class WeeklyReportPush:
                 'weeklyReport/weeklyReport.html',
                 render_data,
                 width=2000,
-                height=1200
+                height=3000
             )
         except Exception as e:
             logger.error(f"[周报推送] 渲染图片失败: {e}")
