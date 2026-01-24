@@ -5,17 +5,17 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width">
   <link rel="shortcut icon" href="#" />
-  <link rel="preload" href="{{ _res_path }}fonts/p-med.ttf" as="font" type="font/ttf">
-  <link rel="stylesheet" type="text/css" href="{{ _res_path }}common/common.css" />
+  <link rel="preload" href="{{_res_path}}fonts/Guruwords.ttf" as="font" type="font/ttf">
+  <link rel="stylesheet" type="text/css" href="{{_res_path}}common/common.css" />
   <title>delta-force-plugin</title>
-  {% block css %}
-  {% endblock %}
+  {{block 'css'}}
+  {{/block}}
 </head>
 
-<body class="elem-{{ element or elem or 'hydro' }} {{ displayMode or mode or 'default' }}-mode {{ bodyClass or '' }}" {{ sys.scale if sys else '' }}>
+<body class="elem-{{element||elem||`hydro`}} {{displayMode || mode || `default`}}-mode {{bodyClass}}" {{sys.scale}}>
   <div class="container" id="container">
-    {% block main %}{% endblock %}
-    <div class="copyright">{{ copyright|safe if copyright else (sys.copyright|safe if sys and sys.copyright else '') }}</div>
+    {{block 'main'}}{{/block}}
+    <div class="copyright">{{@copyright || sys?.copyright}}</div>
   </div>
 </body>
 

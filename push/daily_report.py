@@ -222,8 +222,8 @@ class DailyReportPush:
             return await Render.render_to_image(
                 'dailyReport/dailyReport.html',
                 render_data,
-                width=800,
-                height=600
+                width=1250,
+                height=1000
             )
         except Exception as e:
             logger.error(f"[日报推送] 渲染图片失败: {e}")

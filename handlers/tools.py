@@ -546,8 +546,8 @@ class ToolsHandler(BaseHandler):
             'mapStats/mapStats.html',
             render_data,
             fallback_text=self._build_map_stats_text(map_stats_list, mode, mode_name, season),
-            width=800,
-            height=700
+            width=600,
+            height=1000
         )
 
     def _build_map_stats_text(self, map_stats_list, mode, mode_name, season):

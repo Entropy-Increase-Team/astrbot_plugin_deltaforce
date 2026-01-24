@@ -1,28 +1,28 @@
-{% extends "common/common.html" %}
-{% block css %}
-<link rel="stylesheet" type="text/css" href="{{ _res_path }}Template/musicList/musicList.css"/>
-{% endblock %}
-{% block main %}
+﻿{{extend commonLayout}}
+{{block 'css'}}
+<link rel="stylesheet" type="text/css" href="Template/musicList/musicList.css"/>
+{{/block}}
+{{block 'main'}}
 <div class="music-list-container">
     <!-- 背景图片 -->
-    <img class="bg-overlay" src="{{ _res_path }}imgs/others/loading13.png" alt="" />
+    <img class="bg-overlay" src="imgs/others/loading13.png" alt="" />
     
     <!-- 头部区域 -->
     <div class="header-section">
         <!-- 游戏Logo和名称 -->
         <div class="game-meta">
-            <img class="game-logo" src="{{ _res_path }}imgs/others/logo.png" alt="三角洲行动" />
+            <img class="game-logo" src="imgs/others/logo.png" alt="三角洲行动" />
         </div>
         
         <!-- 标题区域 -->
         <div class="title-section">
-            <h1 class="main-title">{{ listTitle }}</h1>
+            <h1 class="main-title">{{listTitle}}</h1>
         </div>
         
         <!-- 副标题和统计信息 -->
         <div class="subtitle-row">
-            <span class="subtitle-text">{{ subtitle }}</span>
-            <span class="count-info">共 {{ totalCount }} 首歌曲</span>
+            <span class="subtitle-text">{{subtitle}}</span>
+            <span class="count-info">共 {{totalCount}} 首歌曲</span>
         </div>
     </div>
     
@@ -36,39 +36,39 @@
     
     <!-- 音乐列表 -->
     <div class="music-list">
-        {% for item in musicList %}
+        {{each musicList item index}}
         <div class="music-item">
             <!-- 序号 -->
             <div class="music-index">
-                {{ item.index }}
+                {{item.index}}
             </div>
             
             <!-- 封面 -->
             <div class="music-cover-wrapper">
-                {% if item.cover %}
-                <img class="music-cover" src="{{ item.cover }}" alt="{{ item.name }}" onerror="this.onerror=null; this.style.display='none';" />
-                {% endif %}
+                {{if item.cover}}
+                <img class="music-cover" src="{{item.cover}}" alt="{{item.name}}" onerror="this.onerror=null; this.style.display='none';" />
+                {{/if}}
                 <div class="music-cover-placeholder"></div>
             </div>
             
             <!-- 信息区域 -->
             <div class="music-content">
                 <div class="music-title-row">
-                    <div class="music-name">{{ item.name }}</div>
-                    <div class="music-command-badge">^点歌 {{ item.index }}</div>
+                    <div class="music-name">{{item.name}}</div>
+                    <div class="music-command-badge">^点歌 {{item.index}}</div>
                 </div>
-                <div class="music-artist">{{ item.artist }}</div>
+                <div class="music-artist">{{item.artist}}</div>
                 <div class="music-tags">
-                    {% if item.playlist %}
-                    <span class="music-tag playlist-tag">{{ item.playlist }}</span>
-                    {% endif %}
-                    {% if item.hot %}
-                    <span class="music-tag hot-tag">🔥 {{ item.hot }}</span>
-                    {% endif %}
+                    {{if item.playlist}}
+                    <span class="music-tag playlist-tag">{{item.playlist}}</span>
+                    {{/if}}
+                    {{if item.hot}}
+                    <span class="music-tag hot-tag">🔥 {{item.hot}}</span>
+                    {{/if}}
                 </div>
             </div>
         </div>
-        {% endfor %}
+        {{/each}}
     </div>
     
     <!-- 页脚 -->
@@ -76,5 +76,5 @@
         <div class="copyright-text">由 DeltaForce-Plugin-Yunzai 强力驱动</div>
     </div>
 </div>
-{% endblock %}
-{% block footer %}{% endblock %}
+{{/block}}
+{{block 'footer'}}{{/block}}

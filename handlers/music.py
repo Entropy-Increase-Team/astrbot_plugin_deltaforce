@@ -114,8 +114,8 @@ class MusicHandler(BaseHandler):
                 'musicList/musicList.html',
                 render_data,
                 fallback_text=self._build_music_list_text(page, total_pages, page_musics, start),
-                width=600,
-                height=800
+width=1200,
+            height=1000
             )
 
         except Exception as e:

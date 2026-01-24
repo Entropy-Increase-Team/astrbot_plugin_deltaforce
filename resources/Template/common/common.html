@@ -1,24 +1,21 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="zh-cn">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width">
   <link rel="shortcut icon" href="#" />
   <link rel="stylesheet" type="text/css" href="Template/common/common.css"/>
-  <style>
-    /* 确保背景颜色生效 */
-    body { background-color: #1a1a2e; color: #ffffff; }
-  </style>
   <title>delta-force-plugin</title>
-  {% block css %}
-  {% endblock %}
+  {{block 'css'}}
+  {{/block}}
 </head>
 <body>
-  {% block main %}{% endblock %}
-  {% block footer %}
+  {{block 'main'}}{{/block}}
+  {{block 'footer'}}
   <div class="template-footer">
-    <div class="copyright-text">由 DeltaForce-Plugin-AstrBot 强力驱动</div>
+    <div class="copyright-text">由 DeltaForce-Plugin-Yunzai 强力驱动</div>
   </div>
-  {% endblock %}
+  {{/block}}
 </body>
 </html>
+

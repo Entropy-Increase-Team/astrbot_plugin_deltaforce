@@ -1,18 +1,18 @@
-{% extends "common/common.html" %}
+﻿{{extend commonLayout}}
 
-{% block css %}
-<link rel="stylesheet" type="text/css" href="{{ _res_path }}Template/flows/moneyTrendChart.css"/>
-{% endblock %}
+{{block 'css'}}
+<link rel="stylesheet" type="text/css" href="Template/flows/moneyTrendChart.css"/>
+{{/block}}
 
-{% block main %}
+{{block 'main'}}
 <div class="container">
     <!-- 背景图片 -->
-    <img class="bg-image" src="{{ _res_path }}imgs/others/loading13.png" alt="" />
+    <img class="bg-image" src="imgs/others/loading13.png" alt="" />
     
     <!-- 头部区域 -->
     <div class="header">
         <div class="header-left">
-            <img class="game-logo" src="{{ _res_path }}imgs/others/logo.png" alt="三角洲行动" />
+            <img class="game-logo" src="imgs/others/logo.png" alt="三角洲行动" />
         </div>
         <div class="header-center">
             <div class="title">货币流水</div>
@@ -21,23 +21,23 @@
     </div>
 
     <div class="content">
-        {% if moneyTrendChart %}
+        {{if moneyTrendChart}}
         <div class="money-trend-chart">
-            <div class="chart-title">资产余额变化趋势{% if moneyTrendChart.dateRange %}（{{ moneyTrendChart.dateRange }}）{% endif %}</div>
+            <div class="chart-title">资产余额变化趋势{{if moneyTrendChart.dateRange}}（{{moneyTrendChart.dateRange}}）{{/if}}</div>
             <div class="chart-container">
                 <div class="line-chart-wrapper">
-                    <svg class="line-chart-svg" viewBox="0 0 {{ moneyTrendChart.chartWidth }} {{ moneyTrendChart.chartHeight }}" preserveAspectRatio="xMidYMid meet">
+                    <svg class="line-chart-svg" viewBox="0 0 {{moneyTrendChart.chartWidth}} {{moneyTrendChart.chartHeight}}" preserveAspectRatio="xMidYMid meet">
                         <!-- 折线 -->
-                        <path class="line-chart-path" d="{{ moneyTrendChart.pathData }}" 
+                        <path class="line-chart-path" d="{{moneyTrendChart.pathData}}" 
                               fill="none" stroke="#0FF796" stroke-width="2.5" 
                               stroke-linecap="round" stroke-linejoin="round"/>
                         <!-- 数据点和标签 -->
-                        {% for point in moneyTrendChart.points %}
+                        {{each moneyTrendChart.points point}}
                         <g class="line-chart-point-group">
-                            <circle class="line-chart-point" cx="{{ point.x }}" cy="{{ point.y }}" 
+                            <circle class="line-chart-point" cx="{{point.x}}" cy="{{point.y}}" 
                                     r="3.5" fill="#0FF796" stroke="#0a0a0a" stroke-width="1.5"/>
                             <!-- 标签文本 -->
-                            <text class="line-chart-value-text" x="{{ point.x }}" y="{{ point.y }}" 
+                            <text class="line-chart-value-text" x="{{point.x}}" y="{{point.y}}" 
                                   text-anchor="middle" 
                                   dy="-14" 
                                   fill="#0FF796" 
@@ -45,32 +45,33 @@
                                   font-weight="700" 
                                   font-family="Arial, sans-serif"
                                   dominant-baseline="middle">
-                                {{ point.balance }}
+                                {{point.balance}}
                             </text>
                         </g>
-                        {% endfor %}
+                        {{/each}}
                     </svg>
                     <!-- 日期标签 -->
                     <div class="line-chart-labels">
-                        {% for point in moneyTrendChart.points %}
-                        <div class="line-chart-label-item" style="left: {{ point.xPercent }}%">
-                            <span class="line-chart-label">{{ point.date }}</span>
+                        {{each moneyTrendChart.points point}}
+                        <div class="line-chart-label-item" style="left: {{point.xPercent}}%">
+                            <span class="line-chart-label">{{point.date}}</span>
                         </div>
-                        {% endfor %}
+                        {{/each}}
                     </div>
                 </div>
                 <div class="chart-summary">
-                    <span class="chart-summary-text">起始余额：{{ moneyTrendChart.startBalance }} → 结束余额：{{ moneyTrendChart.endBalance }}</span>
-                    <span class="chart-summary-text" style="margin-left: 20px;">最高：{{ moneyTrendChart.maxBalance }} | 最低：{{ moneyTrendChart.minBalance }}</span>
-                    {% if moneyTrendChart.totalChange %}
-                    <span class="chart-summary-text" style="margin-left: 20px;">总计变化：{{ moneyTrendChart.totalChange }}</span>
-                    {% endif %}
+                    <span class="chart-summary-text">起始余额：{{moneyTrendChart.startBalance}} → 结束余额：{{moneyTrendChart.endBalance}}</span>
+                    <span class="chart-summary-text" style="margin-left: 20px;">最高：{{moneyTrendChart.maxBalance}} | 最低：{{moneyTrendChart.minBalance}}</span>
+                    {{if moneyTrendChart.totalChange}}
+                    <span class="chart-summary-text" style="margin-left: 20px;">总计变化：{{moneyTrendChart.totalChange}}</span>
+                    {{/if}}
                 </div>
             </div>
         </div>
-        {% else %}
+        {{else}}
         <div class="empty-message">暂无折线图数据</div>
-        {% endif %}
+        {{/if}}
     </div>
 </div>
-{% endblock %}
+{{/block}}
+

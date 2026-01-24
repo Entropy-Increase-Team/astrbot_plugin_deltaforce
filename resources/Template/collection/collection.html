@@ -1,10 +1,10 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>我的藏品</title>
-    <link rel="stylesheet" type="text/css" href="{{ _res_path }}Template/collection/collection.css"/>
+    <link rel="stylesheet" type="text/css" href="Template/collection/collection.css"/>
 </head>
 <body>
     <div class="page-section page-section--collection">
@@ -21,7 +21,7 @@
                             <div class="tab-container-head">
                                 <div class="ui-tabs">
                                     <div class="ui-tabs-item current">
-                                        <div class="ui-tabs-menu">{{ typeName }}</div>
+                                        <div class="ui-tabs-menu">{{typeName}}</div>
                                     </div>
                                 </div>
                             </div>
@@ -30,47 +30,47 @@
                                 <div class="collections">
                                     <div class="list-toolbar">
                                         <div class="toolbar-main">
-                                            <span>已拥有数量 <span class="text-count">{{ totalCount }}</span></span>
+                                            <span>已拥有数量 <span class="text-count">{{totalCount}}</span></span>
                                         </div>
                                         <div class="toolbar-side">
-                                            {% for stat in qualityStats %}
-                                            <div class="icon-quality icon-quality--{{ stat.level }}">
-                                                {{ stat.count }}
+                                            {{each qualityStats stat}}
+                                            <div class="icon-quality icon-quality--{{stat.level}}">
+                                                {{stat.count}}
                                             </div>
-                                            {% endfor %}
+                                            {{/each}}
                                         </div>
                                     </div>
                                     
                                     <div class="collections-cont">
-                                        {% for category in categories %}
+                                        {{each categories category}}
                                         <div class="category-section">
-                                            <div class="category-header">{{ category.name }}</div>
-                                            <div class="collections-list" data-bg="{{ category.bgImage }}">
-                                                {% for item in category.items %}
-                                                <div class="collection-item collection-card--{{ item.qualityLevel }}">
+                                            <div class="category-header">{{category.name}}</div>
+                                            <div class="collections-list" data-bg="{{category.bgImage}}">
+                                                {{each category.items item}}
+                                                <div class="collection-item collection-card--{{item.qualityLevel}}">
                                                     <div class="collection-item-inner">
-                                                        <div class="collection-item-bg" {% if category.bgImage == 'operator-skin' %}style="background-image: url('{{ item.imageUrl }}'); background-size: cover; background-position: center; opacity: 0.9;"{% endif %}>
+                                                        <div class="collection-item-bg" {{if category.bgImage === 'operator-skin'}}style="background-image: url('{{item.imageUrl}}'); background-size: cover; background-position: center; opacity: 0.9;"{{/if}}>
                                                             <div class="collection-item-bg-ele"></div>
                                                         </div>
-                                                        {% if category.bgImage != 'operator-skin' %}
+                                                        {{if category.bgImage !== 'operator-skin'}}
                                                         <div class="collection-img-wrap">
-                                                            <img class="collection-img collection-img--{{ item.category }}" src="{{ item.imageUrl }}" alt="{{ item.name }}" onerror="this.style.display='none';" />
+                                                            <img class="collection-img collection-img--{{item.category}}" src="{{item.imageUrl}}" alt="{{item.name}}" onerror="this.style.display='none';" />
                                                         </div>
-                                                        {% endif %}
+                                                        {{/if}}
                                                         <div class="collection-item-info">
                                                             <div class="item-info">
-                                                                <p>{{ item.id }}</p>
+                                                                <p>{{item.id}}</p>
                                                             </div>
                                                         </div>
                                                         <div class="collection-item-title">
-                                                            <span class="title-info">{{ item.name }}</span>
+                                                            <span class="title-info">{{item.name}}</span>
                                                         </div>
                                                     </div>
                                                 </div>
-                                                {% endfor %}
+                                                {{/each}}
                                             </div>
                                         </div>
-                                        {% endfor %}
+                                        {{/each}}
                                     </div>
                                 </div>
                             </div>
@@ -82,3 +82,4 @@
     </div>
 </body>
 </html>
+

@@ -262,8 +262,8 @@ class WeeklyReportPush:
             return await Render.render_to_image(
                 'weeklyReport/weeklyReport.html',
                 render_data,
-                width=800,
-                height=800
+                width=2000,
+                height=1200
             )
         except Exception as e:
             logger.error(f"[周报推送] 渲染图片失败: {e}")

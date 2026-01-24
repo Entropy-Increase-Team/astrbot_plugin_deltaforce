@@ -6,6 +6,7 @@ body {
     width: 1365px;
     height: 640px;
     overflow: hidden;
+    /* 移除固定缩放，提升性能 */
     /* GPU加速优化 */
     -webkit-transform: translateZ(0);
     transform: translateZ(0);
@@ -245,4 +246,4 @@ img {
 .user-avatar:hover {
     transform: scale(1.05);
     transition: transform 0.3s ease;
-}
+} 

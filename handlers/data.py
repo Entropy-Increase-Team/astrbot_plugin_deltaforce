@@ -124,8 +124,8 @@ class DataHandler(BaseHandler):
             'personalData/personalData.html',
             render_data,
             fallback_text=self._build_personal_data_text(season, mode, sol_detail, mp_detail),
-            width=800,
-            height=800
+            width=2000,
+            height=1000
         )
 
     def _build_personal_data_text(self, season, mode, sol_detail, mp_detail):
@@ -305,8 +305,8 @@ class DataHandler(BaseHandler):
             'flows/flows.html',
             render_data,
             fallback_text=self._build_flows_text(first_data, flow_type, page),
-            width=800,
-            height=700
+            width=2200,
+            height=900
         )
 
     def _build_flows_text(self, first_data, flow_type, page):
@@ -433,8 +433,8 @@ class DataHandler(BaseHandler):
             'record/record.html',
             render_data,
             fallback_text=self._build_record_text(mode_names[mode_type], page, records),
-            width=800,
-            height=600
+            width=600,
+            height=1000
         )
 
     def _build_record_text(self, mode_name, page, records):
@@ -537,8 +537,8 @@ class DataHandler(BaseHandler):
             'collection/collection.html',
             render_data,
             fallback_text=self._build_collection_text(total_count, red_count, collections),
-            width=800,
-            height=600
+            width=1200,
+            height=800
         )
 
     def _build_collection_text(self, total_count, red_count, collections):
@@ -618,8 +618,8 @@ class DataHandler(BaseHandler):
                 'operator/operator.html',
                 render_data,
                 fallback_text=self._build_operator_detail_text(operator),
-                width=600,
-                height=500
+                width=1200,
+                height=800
             )
         else:
             # 显示干员列表 - 按兵种分类
@@ -642,8 +642,8 @@ class DataHandler(BaseHandler):
                 'operator/operator.html',
                 render_data,
                 fallback_text=self._build_operator_list_text(operators, by_type),
-                width=800,
-                height=600
+                width=1200,
+                height=800
             )
 
     def _build_operator_detail_text(self, operator):

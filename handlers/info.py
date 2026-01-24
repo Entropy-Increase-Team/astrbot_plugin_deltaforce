@@ -403,8 +403,8 @@ class InfoHandler(BaseHandler):
             'placeInfo/placeInfo.html',
             render_data,
             fallback_text=self._build_place_status_text(places, stats),
-            width=700,
-            height=600
+            width=1700,
+            height=1000
         )
 
     def _build_place_status_text(self, places, stats):
@@ -548,8 +548,8 @@ class InfoHandler(BaseHandler):
             'redRecord/redRecord.html',
             render_data,
             fallback_text=self._build_red_collection_text(records, total_value),
-            width=700,
-            height=600
+            width=1250,
+            height=1000
         )
 
     def _build_red_collection_text(self, records, total_value):
@@ -633,8 +633,8 @@ class InfoHandler(BaseHandler):
             'healthInfo/healthInfo.html',
             render_data,
             fallback_text=self._build_health_text(debuff_list, buff_list),
-            width=800,
-            height=600
+            width=1000,
+            height=800
         )
 
     def _build_health_text(self, debuff_list, buff_list):
