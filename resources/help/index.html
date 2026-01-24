@@ -9,6 +9,8 @@
 
 {% block main %}
 
+<div class="container">
+
 {% macro render_group(group) %}
     {% set list_len = group.list | length %}
     <div class="cont-box">
@@ -72,5 +74,7 @@
   {% endfor %}
 
 {% endif %}
+
+</div>
 
 {% endblock %}

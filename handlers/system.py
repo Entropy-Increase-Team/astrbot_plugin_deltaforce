@@ -132,11 +132,24 @@ class SystemHandler(BaseHandler):
         left_groups = help_groups[:mid]
         right_groups = help_groups[mid:]
         
+        # 构建样式
+        style = """
+        :root {
+            --bg-url: url('help/imgs/default/bg.jpg');
+            --container-bg-url: none;
+            --icon-url: none;
+            --primary-color: #ceb78b;
+            --desc-color: #eee;
+        }
+        """
+        
         render_data = {
             'helpCfg': {
                 'title': '三角洲行动插件帮助',
                 'subTitle': 'DeltaForce-Plugin for AstrBot'
             },
+            'style': style,
+            'bgType': ' default',
             'twoColumnLayout': True,
             'leftGroups': left_groups,
             'rightGroups': right_groups,
