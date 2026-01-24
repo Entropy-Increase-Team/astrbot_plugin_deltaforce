@@ -11,7 +11,7 @@ body {
   background-image: var(--container-bg-url);
   background-position: top left;
   background-repeat: no-repeat;
-  background-size: 100% auto;
+  background-size: cover; /* 统一使用 cover */
   width: 830px;
 }
 .head-box {
@@ -86,4 +86,29 @@ body {
   display: block;
   font-size: 13px;
   line-height: 18px;
-}/*# sourceMappingURL=index.css.map */
+}
+
+.help-content-wrapper {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  flex-wrap: wrap;
+}
+
+.help-column {
+  width: 48%;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Clearfix for container if needed, though flex implies block formatting context for wrapper */
+.container::after {
+  content: "";
+  display: table;
+  clear: both;
+}
+
+/* Ensure container has min-height to show background if body has it */
+.container {
+  min-height: 100vh;
+}

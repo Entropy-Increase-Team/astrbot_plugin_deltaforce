@@ -133,10 +133,14 @@ class SystemHandler(BaseHandler):
         right_groups = help_groups[mid:]
         
         # 构建样式
+        # 确保 container 继承 body 的背景配置，或者直接在这里强制设置
+        # 注意：render.py 截图时可能只依据 .container 的大小，如果 .container 背景透明，底层 body 背景应该能透出来
+        # 但为了保险，我们给 .container 也设置背景，或者确保 CSS 变量传递正确
         style = """
         :root {
-            --bg-url: url('help/imgs/default/bg.jpg');
-            --container-bg-url: none;
+            /* 修正背景图片路径 */
+            --bg-url: url('imgs/background/bg2-1.webp');
+            --container-bg-url: url('imgs/background/bg2-1.webp');
             --icon-url: none;
             --primary-color: #ceb78b;
             --desc-color: #eee;
