@@ -150,6 +150,12 @@ class SystemHandler(BaseHandler):
         body, .container {{
             background-color: #222 !important; /* 防止图片加载失败时显示白底 */
         }}
+        /* Ensure glass effect is visible if container has background */
+        .cont-box {{
+             background: rgba(255, 255, 255, 0.1) !important;
+             backdrop-filter: blur(10px);
+             -webkit-backdrop-filter: blur(10px);
+        }}
         """
         
         render_data = {

@@ -18,7 +18,7 @@ body {
     width: 1365px;
     height: 640px;
     position: relative; 
-    background: white;
+    background: transparent; /* Changed from white to transparent to show bg */
     padding: 0;
     margin: 0;
     /* GPU加速 */
@@ -35,6 +35,17 @@ img {
 }
 
 /* 装饰线条 */
+/* 添加玻璃拟态效果到主要信息卡片 */
+.user-header, 
+.assets-info,
+.game-mode-card {
+    background: rgba(0, 0, 0, 0.4) !important;
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
 .decor-line { 
     background: #23F79E; 
     position: absolute;
