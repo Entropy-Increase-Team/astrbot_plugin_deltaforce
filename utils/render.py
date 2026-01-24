@@ -161,8 +161,14 @@ class Render:
                     # 等待字体加载
                     await page.wait_for_timeout(500)
                 
-                    # 获取实际内容区域
-                    container = await page.query_selector('#container, .container, body')
+                    # 获取实际内容区域 - 优先查找容器
+                    container = await page.query_selector('#container')
+                    if not container:
+                         container = await page.query_selector('.container')
+                    
+                    if not container:
+                         container = await page.query_selector('body')
+
                     if container:
                         box = await container.bounding_box()
                         if box:

@@ -114,5 +114,8 @@ body {
 
 /* Ensure container has min-height to show background if body has it */
 .container {
-  min-height: 100vh;
+  /* min-height: 100vh; Removed to allow dynamic height clipping */
+  display: inline-block; /* Ensure it wraps content */
+  width: 1250px;
+  padding-bottom: 30px; /* Add some padding at bottom */
 }

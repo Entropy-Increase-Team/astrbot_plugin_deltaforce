@@ -106,7 +106,7 @@ class SystemHandler(BaseHandler):
             'help/index.html',
             render_data,
             fallback_text=self._build_help_text(),
-            width=1000,
+            width=1300,
             height=4000
         )
 
