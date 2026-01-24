@@ -17,12 +17,21 @@ class DeltaForceAPI():
             ) as response:
                 if response.status != 200:
                     text = await response.text()
-                    return {"code": response.status, "msg": text, "data": None}
+                    # 检测 HTML 错误页面，返回友好的错误消息
+                    if "<html" in text.lower() or "<!doctype" in text.lower():
+                        error_msg = f"服务器错误 ({response.status})"
+                    else:
+                        error_msg = text[:200] if len(text) > 200 else text
+                    return {"code": response.status, "msg": error_msg, "data": None}
                 try:
                     return await response.json()
                 except (aiohttp.ContentTypeError, json.JSONDecodeError):
                     text = await response.text()
-                    return {"code": response.status, "msg": f"响应格式错误: {text}", "data": None}
+                    if "<html" in text.lower() or "<!doctype" in text.lower():
+                        error_msg = "服务器返回了无效响应"
+                    else:
+                        error_msg = f"响应格式错误: {text[:100]}"
+                    return {"code": response.status, "msg": error_msg, "data": None}
     
     async def req_post(self, url, json=None, data=None):
         headers = {"Authorization": f"Bearer {self.token}"}
@@ -35,12 +44,21 @@ class DeltaForceAPI():
             ) as response:
                 if response.status != 200:
                     text = await response.text()
-                    return {"code": response.status, "msg": text, "data": None}
+                    # 检测 HTML 错误页面，返回友好的错误消息
+                    if "<html" in text.lower() or "<!doctype" in text.lower():
+                        error_msg = f"服务器错误 ({response.status})"
+                    else:
+                        error_msg = text[:200] if len(text) > 200 else text
+                    return {"code": response.status, "msg": error_msg, "data": None}
                 try:
                     return await response.json()
                 except (aiohttp.ContentTypeError, json.JSONDecodeError):
                     text = await response.text()
-                    return {"code": response.status, "msg": f"响应格式错误: {text}", "data": None}
+                    if "<html" in text.lower() or "<!doctype" in text.lower():
+                        error_msg = "服务器返回了无效响应"
+                    else:
+                        error_msg = f"响应格式错误: {text[:100]}"
+                    return {"code": response.status, "msg": error_msg, "data": None}
 
     ################################################################
     async def user_bind(self, platformId:str, frameworkToken:str):

@@ -163,7 +163,8 @@ class InfoHandler(BaseHandler):
             return
         
         data = result.get("data", {})
-        role_info = result.get("roleInfo", {})
+        # 兼容两种数据结构
+        role_info = result.get("roleInfo") or data.get("roleInfo", {})
         
         # 准备渲染参数
         params = {

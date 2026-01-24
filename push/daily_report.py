@@ -133,8 +133,10 @@ class DailyReportPush:
             try:
                 info_result = await self.api.get_personal_info(token)
                 if info_result.get("data"):
-                    user_data = info_result["data"].get("userData", {})
-                    role_info = info_result.get("roleInfo", {})
+                    data = info_result.get("data", {})
+                    user_data = data.get("userData", {})
+                    # 兼容两种数据结构
+                    role_info = info_result.get("roleInfo") or data.get("roleInfo", {})
                     name = self._decode_user_info(user_data.get("charac_name") or role_info.get("charac_name"))
                     if name:
                         user_name = name

@@ -41,10 +41,18 @@ class BaseHandler:
         """
         if not isinstance(response, dict):
             # 如果响应不是字典，可能是 HTML 错误页面或其他错误
-            if isinstance(response, str) and "<html" in response.lower():
+            if isinstance(response, str) and ("<html" in response.lower() or "<!doctype" in response.lower()):
                 return "服务器错误，请稍后重试"
             return default
-        return response.get("msg") or response.get("message") or response.get("error") or default
+        
+        # 获取错误消息
+        msg = response.get("msg") or response.get("message") or response.get("error") or default
+        
+        # 检查错误消息是否包含 HTML 内容
+        if isinstance(msg, str) and ("<html" in msg.lower() or "<!doctype" in msg.lower()):
+            return "服务器错误，请稍后重试"
+        
+        return msg
 
     def chain_reply(self, event: AstrMessageEvent, raw_text: str = None, components: list = None):
         """发送消息链的辅助方法"""

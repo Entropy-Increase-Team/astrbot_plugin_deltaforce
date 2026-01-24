@@ -88,9 +88,12 @@ class InfoHandler(BaseHandler):
             yield self.chain_reply(event, f"获取个人信息失败：{self.get_error_msg(result)}")
             return
         
+        # 兼容两种数据结构：
+        # 旧格式：{"code": 0, "data": {...}, "roleInfo": {...}}
+        # 新格式：{"success": true, "data": {"userData": {...}, "roleInfo": {...}}}
         data = result.get("data", {})
-        role_info = result.get("roleInfo", {})
-        if not data or not role_info:
+        role_info = result.get("roleInfo") or data.get("roleInfo", {})
+        if not data and not role_info:
             yield self.chain_reply(event, "未查询到个人信息")
             return
         
@@ -217,7 +220,9 @@ class InfoHandler(BaseHandler):
             yield self.chain_reply(event, f"获取UID失败：{self.get_error_msg(result)}")
             return
         
-        role_info = result.get("roleInfo", {})
+        # 兼容两种数据结构
+        data = result.get("data", {})
+        role_info = result.get("roleInfo") or data.get("roleInfo", {})
         if not role_info:
             yield self.chain_reply(event, "未查询到角色信息")
             return
