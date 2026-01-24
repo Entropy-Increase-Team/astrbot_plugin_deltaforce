@@ -154,7 +154,7 @@ class DeltaForce(Star):
     # ==================== 帮助命令 ====================
 
     @filter.command("三角洲帮助", alias={"洲帮助", "三角洲菜单", "洲菜单"})
-    async def show_help(self, event: AstrMessageEvent):
+    async def show_help(self, event: AstrMessageEvent, message: str = ""):
         """显示帮助菜单"""
         async for result in self.system_handler.show_help(event):
             yield result
