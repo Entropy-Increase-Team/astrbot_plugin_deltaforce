@@ -15,12 +15,16 @@ class BaseHandler:
         self.api = api
         self.db_manager = db_manager
     
-    def is_success(self, response: dict) -> bool:
+    def is_success(self, response) -> bool:
         """判断接口请求是否成功
         支持两种响应格式：
         1. {"code": 0, ...} - 旧格式
         2. {"success": true, ...} - 新格式
+        支持非字典响应（如 HTML 错误页面）
         """
+        # 如果响应不是字典，直接返回 False
+        if not isinstance(response, dict):
+            return False
         # 先检查 success 字段（新格式）
         if "success" in response:
             return response.get("success", False) == True
@@ -30,10 +34,16 @@ class BaseHandler:
             return code == "0" or code.upper() == "SUCCESS"
         return code == 0
 
-    def get_error_msg(self, response: dict, default: str = "未知错误") -> str:
+    def get_error_msg(self, response, default: str = "未知错误") -> str:
         """从响应中获取错误消息
         支持多种字段名：msg, message, error
+        支持非字典响应（如 HTML 错误页面）
         """
+        if not isinstance(response, dict):
+            # 如果响应不是字典，可能是 HTML 错误页面或其他错误
+            if isinstance(response, str) and "<html" in response.lower():
+                return "服务器错误，请稍后重试"
+            return default
         return response.get("msg") or response.get("message") or response.get("error") or default
 
     def chain_reply(self, event: AstrMessageEvent, raw_text: str = None, components: list = None):

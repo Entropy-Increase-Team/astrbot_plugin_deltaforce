@@ -44,7 +44,12 @@ class VoiceHandler(BaseHandler):
                 yield self.chain_reply(event, f"❌ 获取语音失败：{self.get_error_msg(result)}")
                 return
 
-            audios = result.get("data", {}).get("audios", [])
+            data = result.get("data", {})
+            # 处理 data 可能是列表或字典的情况
+            if isinstance(data, list):
+                audios = data
+            else:
+                audios = data.get("audios", [])
             if not audios:
                 yield self.chain_reply(event, "未找到符合条件的语音\n使用 /三角洲 语音列表 查看可用内容")
                 return

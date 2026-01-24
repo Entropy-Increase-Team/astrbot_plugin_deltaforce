@@ -113,9 +113,11 @@ class DailyReportPush:
             result = await self.api.get_daily_record(token, "", yesterday_str)
             
             # 支持两种响应格式: {"success": true} 或 {"code": 0}
-            is_success = result.get("success") == True or result.get("code") == 0
+            # 同时处理非字典响应（如 HTML 错误页面）
+            is_success = isinstance(result, dict) and (result.get("success") == True or result.get("code") == 0)
             if not is_success or not result.get("data"):
-                logger.warn(f"[日报推送] 用户 {platform_id} 获取日报失败: {result.get('msg') or result.get('message') or '未知错误'}")
+                error_msg = result.get('msg') or result.get('message') or '未知错误' if isinstance(result, dict) else '服务器错误'
+                logger.warn(f"[日报推送] 用户 {platform_id} 获取日报失败: {error_msg}")
                 return
             
             data = result.get("data", {})

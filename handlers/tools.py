@@ -340,7 +340,30 @@ class ToolsHandler(BaseHandler):
         """制造材料价格查询"""
         yield self.chain_reply(event, "正在查询材料价格，请稍候...")
 
-        result = await self.api.get_material_price(query.strip() if query else "")
+        # 如果有查询参数，需要先搜索物品获取ID
+        object_id = ""
+        object_name = ""
+        
+        if query and query.strip():
+            query = query.strip()
+            if query.isdigit():
+                # 直接是ID
+                object_id = query
+                object_name = f"物品ID: {query}"
+            else:
+                # 名称搜索
+                search_result = await self.api.search_object(keyword=query)
+                if self.is_success(search_result):
+                    items = search_result.get("data", {}).get("keywords", [])
+                    if items:
+                        object_id = str(items[0].get("objectID", ""))
+                        object_name = items[0].get("name", items[0].get("objectName", query))
+                
+                if not object_id:
+                    yield self.chain_reply(event, f"未找到与「{query}」相关的物品")
+                    return
+
+        result = await self.api.get_material_price(object_id)
         
         if not self.is_success(result):
             yield self.chain_reply(event, f"查询失败：{self.get_error_msg(result)}")

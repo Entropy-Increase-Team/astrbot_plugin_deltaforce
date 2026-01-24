@@ -31,7 +31,12 @@ class MusicHandler(BaseHandler):
                 yield self.chain_reply(event, f"❌ 获取音乐失败：{self.get_error_msg(result)}")
                 return
 
-            musics = result.get("data", {}).get("musics", [])
+            data = result.get("data", {})
+            # 处理 data 可能是列表或字典的情况
+            if isinstance(data, list):
+                musics = data
+            else:
+                musics = data.get("musics", [])
             if not musics:
                 yield self.chain_reply(event, "未找到符合条件的音乐")
                 return
@@ -76,7 +81,12 @@ class MusicHandler(BaseHandler):
                 yield self.chain_reply(event, f"❌ 获取音乐列表失败：{self.get_error_msg(result)}")
                 return
 
-            musics = result.get("data", {}).get("musics", [])
+            data = result.get("data", {})
+            # 处理 data 可能是列表或字典的情况
+            if isinstance(data, list):
+                musics = data
+            else:
+                musics = data.get("musics", [])
             if not musics:
                 yield self.chain_reply(event, "暂无音乐数据")
                 return
@@ -148,8 +158,14 @@ width=1200,
                 yield self.chain_reply(event, f"❌ 获取歌单失败：{self.get_error_msg(result)}")
                 return
 
-            musics = result.get("data", {}).get("musics", [])
-            playlists = result.get("data", {}).get("playlists", [])
+            data = result.get("data", {})
+            # 处理 data 可能是列表或字典的情况
+            if isinstance(data, list):
+                musics = data
+                playlists = []
+            else:
+                musics = data.get("musics", [])
+                playlists = data.get("playlists", [])
 
             if playlists and not playlist_name:
                 # 显示歌单列表
