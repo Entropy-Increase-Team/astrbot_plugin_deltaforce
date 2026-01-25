@@ -163,7 +163,6 @@ class MusicHandler(BaseHandler):
             # 保存列表到用户记忆（用于点歌功能）
             user_id = event.get_sender_id()
             self.save_music_list_memory(user_id, musics, "rank")
-                return
 
             # 分页显示
             page_size = 10
