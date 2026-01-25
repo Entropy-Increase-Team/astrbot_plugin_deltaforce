@@ -46,7 +46,8 @@ body {
   min-height: 700px;
   margin: 0 auto;
   background: #0b0f13;
-  overflow: hidden;
+  overflow: visible;
+  padding-bottom: 40px;
 }
 
 /* ========== 背景图片样式 ========== */

@@ -1,64 +1,222 @@
-import aiohttp, json
+import aiohttp
+import asyncio
+import json
+import logging
+from typing import Optional, Dict, Any, List, Set
 
-class DeltaForceAPI():
-    """ 三角洲 API 封装类 """
-    def __init__(self, token: str, clientid: str):
+logger = logging.getLogger(__name__)
+
+
+class ApiUrlManager:
+    """
+    API URL 管理器
+    负责管理多个后端地址，支持故障转移和模式切换
+    使用 Timeout 机制和重试逻辑
+    """
+    
+    # 三个后端地址
+    URLS = {
+        "default": "https://df-api.shallow.ink",
+        "eo": "https://df-api-eo.shallow.ink",
+        "esa": "https://df-api-esa.shallow.ink"
+    }
+    
+    # 有效模式列表
+    VALID_MODES = ["auto", "default", "eo", "esa"]
+    
+    def __init__(self, mode: str = "auto", timeout: int = 30, retry_count: int = 3):
+        """
+        初始化 API URL 管理器
+        
+        Args:
+            mode: API模式 ('auto' | 'default' | 'eo' | 'esa')
+            timeout: 请求超时时间（秒）
+            retry_count: 每个地址的重试次数
+        """
+        self._mode = mode if mode in self.VALID_MODES else "auto"
+        self.timeout = timeout
+        self.retry_count = retry_count
+        self.failed_urls: Set[str] = set()
+    
+    @property
+    def mode(self) -> str:
+        return self._mode
+    
+    @mode.setter
+    def mode(self, value: str):
+        if value in self.VALID_MODES:
+            self._mode = value
+            self.failed_urls.clear()
+        else:
+            logger.warning(f"[ApiUrlManager] 无效的模式: {value}，使用默认 auto")
+            self._mode = "auto"
+    
+    def get_available_urls(self) -> List[str]:
+        """获取可用的地址列表（过滤掉失败的地址）"""
+        if self._mode == "auto":
+            # 优先使用 eo 和 esa，default 作为备用
+            urls = [self.URLS["eo"], self.URLS["esa"], self.URLS["default"]]
+        else:
+            urls = [self.URLS.get(self._mode, self.URLS["default"])]
+        
+        return [url for url in urls if url not in self.failed_urls]
+    
+    def get_base_url(self) -> str:
+        """获取当前应该使用的 API 地址"""
+        available_urls = self.get_available_urls()
+        return available_urls[0] if available_urls else self.URLS["default"]
+    
+    def mark_url_failed(self, url: str):
+        """标记地址为失败"""
+        self.failed_urls.add(url)
+        logger.warning(f"[ApiUrlManager] 标记地址为失败: {url}")
+    
+    def reset_failures(self):
+        """重置所有失败记录"""
+        self.failed_urls.clear()
+        logger.info("[ApiUrlManager] 已重置所有失败记录")
+    
+    def get_status(self) -> Dict[str, Any]:
+        """获取当前状态信息（用于调试）"""
+        available_urls = self.get_available_urls()
+        return {
+            "mode": self._mode,
+            "current_url": available_urls[0] if available_urls else self.URLS["default"],
+            "available_urls": available_urls,
+            "failed_urls": list(self.failed_urls),
+            "total_urls": 3 if self._mode == "auto" else 1
+        }
+
+
+class DeltaForceAPI:
+    """三角洲 API 封装类"""
+    
+    def __init__(self, token: str, clientid: str, api_mode: str = "auto", 
+                 timeout: int = 30, retry_count: int = 3):
+        """
+        初始化 API 客户端
+        
+        Args:
+            token: API 授权令牌
+            clientid: 客户端ID
+            api_mode: API模式 ('auto' | 'default' | 'eo' | 'esa')
+            timeout: 请求超时时间（秒）
+            retry_count: 重试次数
+        """
         self.token = token
         self.clientid = clientid
-        self.baseurl = "https://df-api.shallow.ink"
-        
-    async def req_get(self, url, params=None):
-        headers = {"Authorization": f"Bearer {self.token}"}
-        async with aiohttp.ClientSession() as session:
-            async with session.get(
-                url=f"{self.baseurl}{url}", 
-                headers=headers, 
-                params=params
-            ) as response:
-                if response.status != 200:
-                    text = await response.text()
-                    # 检测 HTML 错误页面，返回友好的错误消息
-                    if "<html" in text.lower() or "<!doctype" in text.lower():
-                        error_msg = f"服务器错误 ({response.status})"
-                    else:
-                        error_msg = text[:200] if len(text) > 200 else text
-                    return {"code": response.status, "msg": error_msg, "data": None}
-                try:
-                    return await response.json()
-                except (aiohttp.ContentTypeError, json.JSONDecodeError):
-                    text = await response.text()
-                    if "<html" in text.lower() or "<!doctype" in text.lower():
-                        error_msg = "服务器返回了无效响应"
-                    else:
-                        error_msg = f"响应格式错误: {text[:100]}"
-                    return {"code": response.status, "msg": error_msg, "data": None}
+        self.url_manager = ApiUrlManager(mode=api_mode, timeout=timeout, retry_count=retry_count)
     
-    async def req_post(self, url, json=None, data=None):
+    def set_api_mode(self, mode: str):
+        """设置API模式"""
+        self.url_manager.mode = mode
+    
+    def get_api_status(self) -> Dict[str, Any]:
+        """获取API状态信息"""
+        return self.url_manager.get_status()
+    
+    async def _make_request(self, method: str, url: str, params: Optional[Dict] = None,
+                            json_data: Optional[Dict] = None, form_data: Optional[Dict] = None) -> Dict:
+        """
+        统一的请求方法，支持自动重试和故障转移
+        
+        Args:
+            method: HTTP方法 ('GET' 或 'POST')
+            url: API路径（不含基础URL）
+            params: URL参数
+            json_data: JSON请求体
+            form_data: 表单数据
+        
+        Returns:
+            API响应结果
+        """
         headers = {"Authorization": f"Bearer {self.token}"}
-        async with aiohttp.ClientSession() as session:
-            async with session.post(
-                url=f"{self.baseurl}{url}", 
-                headers=headers, 
-                json=json,
-                data=data
-            ) as response:
-                if response.status != 200:
-                    text = await response.text()
-                    # 检测 HTML 错误页面，返回友好的错误消息
-                    if "<html" in text.lower() or "<!doctype" in text.lower():
-                        error_msg = f"服务器错误 ({response.status})"
-                    else:
-                        error_msg = text[:200] if len(text) > 200 else text
-                    return {"code": response.status, "msg": error_msg, "data": None}
+        
+        # 获取可用地址列表
+        available_urls = self.url_manager.get_available_urls()
+        
+        # 如果没有可用地址，重置失败记录并重新获取
+        if not available_urls:
+            logger.warning("[ApiUrlManager] 所有地址都标记为失败，重置失败记录")
+            self.url_manager.reset_failures()
+            available_urls = self.url_manager.get_available_urls()
+        
+        last_error = None
+        
+        # 遍历所有可用地址
+        for base_url in available_urls:
+            # 对当前地址重试指定次数
+            for attempt in range(1, self.url_manager.retry_count + 1):
                 try:
-                    return await response.json()
-                except (aiohttp.ContentTypeError, json.JSONDecodeError):
-                    text = await response.text()
-                    if "<html" in text.lower() or "<!doctype" in text.lower():
-                        error_msg = "服务器返回了无效响应"
-                    else:
-                        error_msg = f"响应格式错误: {text[:100]}"
-                    return {"code": response.status, "msg": error_msg, "data": None}
+                    full_url = f"{base_url}{url}"
+                    timeout = aiohttp.ClientTimeout(total=self.url_manager.timeout)
+                    
+                    async with aiohttp.ClientSession(timeout=timeout) as session:
+                        if method.upper() == "GET":
+                            async with session.get(full_url, headers=headers, params=params) as response:
+                                result = await self._handle_response(response)
+                                if result.get("code") == 200 or result.get("code") == 0:
+                                    logger.debug(f"[ApiUrlManager] 请求成功: {base_url}")
+                                    return result
+                                # 非200但不是网络错误，直接返回
+                                return result
+                        else:  # POST
+                            async with session.post(full_url, headers=headers, 
+                                                   json=json_data, data=form_data) as response:
+                                result = await self._handle_response(response)
+                                if result.get("code") == 200 or result.get("code") == 0:
+                                    logger.debug(f"[ApiUrlManager] 请求成功: {base_url}")
+                                    return result
+                                return result
+                                
+                except asyncio.TimeoutError:
+                    last_error = f"请求超时 ({self.url_manager.timeout}s)"
+                    logger.warning(f"[ApiUrlManager] 地址 {base_url} 第 {attempt} 次请求超时")
+                except aiohttp.ClientError as e:
+                    last_error = str(e)
+                    logger.warning(f"[ApiUrlManager] 地址 {base_url} 第 {attempt} 次请求失败: {e}")
+                except Exception as e:
+                    last_error = str(e)
+                    logger.warning(f"[ApiUrlManager] 地址 {base_url} 第 {attempt} 次请求异常: {e}")
+                
+                # 如果不是最后一次重试，等待后继续
+                if attempt < self.url_manager.retry_count:
+                    await asyncio.sleep(0.5 * attempt)  # 递增等待时间
+            
+            # 当前地址所有重试都失败，标记为失败
+            logger.error(f"[ApiUrlManager] 地址 {base_url} 重试 {self.url_manager.retry_count} 次后仍然失败")
+            self.url_manager.mark_url_failed(base_url)
+        
+        # 所有地址都失败
+        return {"code": -1, "msg": f"所有 API 地址都请求失败: {last_error}", "data": None}
+    
+    async def _handle_response(self, response: aiohttp.ClientResponse) -> Dict:
+        """处理响应"""
+        if response.status != 200:
+            text = await response.text()
+            if "<html" in text.lower() or "<!doctype" in text.lower():
+                error_msg = f"服务器错误 ({response.status})"
+            else:
+                error_msg = text[:200] if len(text) > 200 else text
+            return {"code": response.status, "msg": error_msg, "data": None}
+        
+        try:
+            return await response.json()
+        except (aiohttp.ContentTypeError, json.JSONDecodeError):
+            text = await response.text()
+            if "<html" in text.lower() or "<!doctype" in text.lower():
+                error_msg = "服务器返回了无效响应"
+            else:
+                error_msg = f"响应格式错误: {text[:100]}"
+            return {"code": response.status, "msg": error_msg, "data": None}
+    
+    async def req_get(self, url: str, params: Optional[Dict] = None) -> Dict:
+        """GET 请求"""
+        return await self._make_request("GET", url, params=params)
+    
+    async def req_post(self, url: str, json: Optional[Dict] = None, data: Optional[Dict] = None) -> Dict:
+        """POST 请求"""
+        return await self._make_request("POST", url, json_data=json, form_data=data)
 
     ################################################################
     async def user_bind(self, platformId:str, frameworkToken:str):

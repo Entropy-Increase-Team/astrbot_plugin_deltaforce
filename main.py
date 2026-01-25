@@ -43,9 +43,20 @@ class DeltaForce(Star):
         self.token = config.get("token", "")
         self.clientid = config.get("clientid", "")
         
+        # API 配置
+        self.api_mode = config.get("api_mode", "auto")
+        self.api_timeout = config.get("api_timeout", 30)
+        self.api_retry_count = config.get("api_retry_count", 3)
+        
         try:
             # 初始化 API 和数据库
-            self.api = DeltaForceAPI(self.token, self.clientid)
+            self.api = DeltaForceAPI(
+                token=self.token, 
+                clientid=self.clientid,
+                api_mode=self.api_mode,
+                timeout=self.api_timeout,
+                retry_count=self.api_retry_count
+            )
             self.db_manager = DeltaForceSQLiteManager()
             
             # 初始化各处理器

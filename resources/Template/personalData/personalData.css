@@ -19,7 +19,8 @@ body {
     position: relative;
     min-height: 1200px;
     box-sizing: border-box;
-    overflow: hidden;
+    overflow: visible;
+    padding-bottom: 80px;
 }
 
 /* 背景装饰 */

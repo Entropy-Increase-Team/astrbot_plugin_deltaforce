@@ -4,8 +4,8 @@ body {
     font-family: 'ProjectD', 'Microsoft YaHei', sans-serif;
     background: white;
     width: 1365px;
-    height: 640px;
-    overflow: hidden;
+    min-height: 640px;
+    overflow: visible;
     /* 移除固定缩放，提升性能 */
     /* GPU加速优化 */
     -webkit-transform: translateZ(0);
@@ -16,11 +16,12 @@ body {
 
 .container { 
     width: 1365px;
-    height: 640px;
+    min-height: 640px;
     position: relative; 
     background: transparent; /* Changed from white to transparent to show bg */
     padding: 0;
     margin: 0;
+    padding-bottom: 30px;
     /* GPU加速 */
     will-change: transform;
 }

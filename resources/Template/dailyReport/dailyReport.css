@@ -24,7 +24,7 @@ body {
     font-family: 'ProjectD', 'Microsoft YaHei', sans-serif;
     width: 1250px;
     margin: 0 auto;
-    overflow: hidden;
+    overflow: visible;
     height: auto;
     min-height: 600px;
 }
@@ -42,7 +42,8 @@ body:has(.container.single-mode) {
     background: radial-gradient(circle at 50% 0%, #161d24 0%, #06090c 100%);
     padding: 60px;
     box-sizing: border-box;
-    overflow: hidden;
+    overflow: visible;
+    padding-bottom: 80px;
 }
 
 /* 单模式查询时调整容器宽度 */

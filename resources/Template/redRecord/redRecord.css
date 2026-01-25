@@ -23,7 +23,7 @@ body {
     color: var(--text-primary);
     width: 1250px;
     margin: 0 auto;
-    overflow: hidden;
+    overflow: visible;
     height: auto;
     min-height: 600px;
 }
@@ -35,8 +35,9 @@ body {
     min-height: 1000px;
     background: radial-gradient(circle at 50% 0%, #161d24 0%, #06090c 100%);
     padding: 60px;
+    padding-bottom: 80px;
     box-sizing: border-box;
-    overflow: hidden;
+    overflow: visible;
 }
 
 /* ========== 背景装饰 ========== */

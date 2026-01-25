@@ -98,9 +98,9 @@ class Render:
         cls,
         template_name: str,
         params: Dict[str, Any],
-        width: int = 1200,
-        height: int = 5000,
-        scale: float = 1.0,
+        width: int = 1400,
+        height: int = 10000,
+        scale: float = 1.5,
         timeout: int = 60000,
         **kwargs
     ) -> Optional[bytes]:
@@ -158,27 +158,114 @@ class Render:
                     file_url = temp_html_path.as_uri()
                     await page.goto(file_url, wait_until='networkidle', timeout=timeout)
                     
-                    # 等待字体加载
-                    await page.wait_for_timeout(500)
+                    # 等待字体和图片加载
+                    await page.wait_for_timeout(800)
+                    
+                    # 等待所有图片加载完成
+                    await page.evaluate("""
+                        () => {
+                            return Promise.all(
+                                Array.from(document.images)
+                                    .filter(img => !img.complete)
+                                    .map(img => new Promise(resolve => {
+                                        img.onload = img.onerror = resolve;
+                                    }))
+                            );
+                        }
+                    """)
                 
                     # 获取实际内容区域 - 优先查找容器
                     container = await page.query_selector('#container')
                     if not container:
-                         container = await page.query_selector('.container')
-                    
+                        container = await page.query_selector('.container')
                     if not container:
-                         container = await page.query_selector('body')
+                        container = await page.query_selector('.red-record-container')
+                    if not container:
+                        container = await page.query_selector('.red-record-list-container')
+                    if not container:
+                        container = await page.query_selector('.music-list-container')
+                    if not container:
+                        container = await page.query_selector('body')
 
                     if container:
-                        box = await container.bounding_box()
-                        if box:
+                        # 使用 JavaScript 获取元素的实际完整尺寸（包括溢出部分）
+                        dimensions = await page.evaluate("""
+                            (element) => {
+                                // 获取元素的完整滚动尺寸
+                                const rect = element.getBoundingClientRect();
+                                const scrollWidth = Math.max(element.scrollWidth, element.offsetWidth, rect.width);
+                                const scrollHeight = Math.max(element.scrollHeight, element.offsetHeight, rect.height);
+                                
+                                // 获取所有子元素的最大边界
+                                let maxBottom = scrollHeight;
+                                let maxRight = scrollWidth;
+                                
+                                const allElements = element.querySelectorAll('*');
+                                allElements.forEach(el => {
+                                    const elRect = el.getBoundingClientRect();
+                                    const elBottom = elRect.bottom - rect.top;
+                                    const elRight = elRect.right - rect.left;
+                                    if (elBottom > maxBottom) maxBottom = elBottom;
+                                    if (elRight > maxRight) maxRight = elRight;
+                                });
+                                
+                                // 添加一些边距
+                                return {
+                                    x: rect.x,
+                                    y: rect.y,
+                                    width: Math.ceil(maxRight) + 20,
+                                    height: Math.ceil(maxBottom) + 20
+                                };
+                            }
+                        """, container)
+                        
+                        if dimensions and dimensions['width'] > 0 and dimensions['height'] > 0:
+                            # 确保截图区域不超出视口
+                            clip_width = min(dimensions['width'], width)
+                            clip_height = min(dimensions['height'], height)
+                            
+                            # 如果内容超出视口，需要先调整视口大小
+                            if dimensions['height'] > height or dimensions['width'] > width:
+                                new_width = max(width, int(dimensions['width']) + 50)
+                                new_height = max(height, int(dimensions['height']) + 50)
+                                await page.set_viewport_size({'width': new_width, 'height': new_height})
+                                await page.wait_for_timeout(300)
+                                
+                                # 重新获取尺寸
+                                dimensions = await page.evaluate("""
+                                    (element) => {
+                                        const rect = element.getBoundingClientRect();
+                                        const scrollHeight = Math.max(element.scrollHeight, element.offsetHeight, rect.height);
+                                        const scrollWidth = Math.max(element.scrollWidth, element.offsetWidth, rect.width);
+                                        
+                                        let maxBottom = scrollHeight;
+                                        let maxRight = scrollWidth;
+                                        
+                                        const allElements = element.querySelectorAll('*');
+                                        allElements.forEach(el => {
+                                            const elRect = el.getBoundingClientRect();
+                                            const elBottom = elRect.bottom - rect.top;
+                                            const elRight = elRect.right - rect.left;
+                                            if (elBottom > maxBottom) maxBottom = elBottom;
+                                            if (elRight > maxRight) maxRight = elRight;
+                                        });
+                                        
+                                        return {
+                                            x: rect.x,
+                                            y: rect.y,
+                                            width: Math.ceil(maxRight) + 20,
+                                            height: Math.ceil(maxBottom) + 20
+                                        };
+                                    }
+                                """, container)
+                            
                             # 截取实际内容区域
                             screenshot = await page.screenshot(
                                 clip={
-                                    'x': 0,
-                                    'y': 0,
-                                    'width': box['width'],
-                                    'height': box['height']
+                                    'x': max(0, dimensions['x']),
+                                    'y': max(0, dimensions['y']),
+                                    'width': dimensions['width'],
+                                    'height': dimensions['height']
                                 },
                                 type='png'
                             )

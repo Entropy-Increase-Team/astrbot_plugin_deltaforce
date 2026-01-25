@@ -11,6 +11,24 @@
     "hint": "机器人后端用户ID (在个人中心获取)",
     "obvious_hint": true
   },
+  "api_mode": {
+    "description": "API模式",
+    "type": "string",
+    "hint": "API请求模式: auto(自动切换,推荐) | default | eo | esa",
+    "default": "auto"
+  },
+  "api_timeout": {
+    "description": "API超时时间",
+    "type": "int",
+    "hint": "API请求超时时间(秒)",
+    "default": 30
+  },
+  "api_retry_count": {
+    "description": "API重试次数",
+    "type": "int",
+    "hint": "API请求失败后的重试次数",
+    "default": 3
+  },
   "push_daily_keyword_enabled": {
     "description": "每日密码推送开关",
     "type": "bool",

@@ -15,7 +15,8 @@ body {
     min-height: 400px;
     margin: 0 auto;
     background: transparent;
-    overflow: hidden;
+    overflow: visible;
+    padding-bottom: 30px;
 }
 
 /* 头部区域 */

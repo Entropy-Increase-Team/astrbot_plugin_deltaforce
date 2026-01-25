@@ -12,7 +12,8 @@ body {
     min-height: 600px;
     margin: 0 auto;
     background: transparent;
-    overflow: hidden;
+    overflow: visible;
+    padding-bottom: 40px;
 }
 
 /* 背景图片 */

@@ -30,7 +30,7 @@ body {
     font-family: 'ProjectD', "Microsoft YaHei", sans-serif;
     width: 1700px;
     margin: 0 auto;
-    overflow: hidden;
+    overflow: visible;
     height: auto;
     min-height: 600px;
 }
