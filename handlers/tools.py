@@ -106,7 +106,8 @@ class ToolsHandler(BaseHandler):
         object_ids = []
         items_info = []
         
-        if query.isdigit():
+        # 检查是否是有效的数字ID（纯数字且长度合理）
+        if query.isdigit() and len(query) >= 5:
             # 直接是ID
             object_ids = [query]
             items_info = [{"objectID": query, "name": f"物品ID: {query}"}]
@@ -118,8 +119,10 @@ class ToolsHandler(BaseHandler):
                 if items:
                     # 取前5个结果
                     for item in items[:5]:
-                        oid = str(item.get("objectID", ""))
-                        if oid:
+                        raw_id = item.get("objectID")
+                        # 确保objectID存在且有效
+                        if raw_id is not None and raw_id != 0 and raw_id != "":
+                            oid = str(raw_id)
                             object_ids.append(oid)
                             items_info.append(item)
 
@@ -178,15 +181,19 @@ class ToolsHandler(BaseHandler):
         object_id = None
         object_name = query
 
-        if query.isdigit():
+        # 检查是否是有效的数字ID（纯数字且长度合理）
+        if query.isdigit() and len(query) >= 5:
             object_id = query
         else:
             search_result = await self.api.search_object(keyword=query)
             if self.is_success(search_result):
                 items = search_result.get("data", {}).get("keywords", [])
                 if items:
-                    object_id = str(items[0].get("objectID", ""))
-                    object_name = items[0].get("name", items[0].get("objectName", query))
+                    raw_id = items[0].get("objectID")
+                    # 确保objectID存在且有效
+                    if raw_id is not None and raw_id != 0 and raw_id != "":
+                        object_id = str(raw_id)
+                        object_name = items[0].get("name", items[0].get("objectName", query))
 
         if not object_id:
             yield self.chain_reply(event, f"未找到与「{query}」相关的物品")
@@ -260,15 +267,19 @@ class ToolsHandler(BaseHandler):
         object_id = None
         object_name = query
 
-        if query.isdigit():
+        # 检查是否是有效的数字ID（纯数字且长度合理）
+        if query.isdigit() and len(query) >= 5:
             object_id = query
         else:
             search_result = await self.api.search_object(keyword=query)
             if self.is_success(search_result):
                 items = search_result.get("data", {}).get("keywords", [])
                 if items:
-                    object_id = str(items[0].get("objectID", ""))
-                    object_name = items[0].get("name", items[0].get("objectName", query))
+                    raw_id = items[0].get("objectID")
+                    # 确保objectID存在且有效
+                    if raw_id is not None and raw_id != 0 and raw_id != "":
+                        object_id = str(raw_id)
+                        object_name = items[0].get("name", items[0].get("objectName", query))
 
         if not object_id:
             yield self.chain_reply(event, f"未找到与「{query}」相关的物品")
@@ -346,7 +357,8 @@ class ToolsHandler(BaseHandler):
         
         if query and query.strip():
             query = query.strip()
-            if query.isdigit():
+            # 检查是否是有效的数字ID（纯数字且长度合理）
+            if query.isdigit() and len(query) >= 5:
                 # 直接是ID
                 object_id = query
                 object_name = f"物品ID: {query}"
@@ -356,8 +368,11 @@ class ToolsHandler(BaseHandler):
                 if self.is_success(search_result):
                     items = search_result.get("data", {}).get("keywords", [])
                     if items:
-                        object_id = str(items[0].get("objectID", ""))
-                        object_name = items[0].get("name", items[0].get("objectName", query))
+                        raw_id = items[0].get("objectID")
+                        # 确保objectID存在且有效（数字或数字字符串，不为0）
+                        if raw_id is not None and raw_id != 0 and raw_id != "":
+                            object_id = str(raw_id)
+                            object_name = items[0].get("name", items[0].get("objectName", query))
                 
                 if not object_id:
                     yield self.chain_reply(event, f"未找到与「{query}」相关的物品")
