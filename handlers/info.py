@@ -283,9 +283,8 @@ class InfoHandler(BaseHandler):
     async def get_daily_keyword(self, event: AstrMessageEvent):
         """每日密码查询"""
         result = await self.api.get_daily_keyword()
-        if not result.get("success", False):
-            error_msg = result.get("message", "未知错误")
-            yield self.chain_reply(event, f"获取每日密码失败：{error_msg}")
+        if not self.is_success(result):
+            yield self.chain_reply(event, f"获取每日密码失败：{self.get_error_msg(result)}")
             return
         
         data = result.get("data", {})

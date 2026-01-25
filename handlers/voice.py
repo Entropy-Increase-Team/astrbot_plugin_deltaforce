@@ -55,9 +55,22 @@ class VoiceHandler(BaseHandler):
                 return
 
             audio = audios[0]
-            audio_url = audio.get("url", "")
+            # 支持多种可能的URL字段名
+            audio_url = (
+                audio.get("url") or 
+                audio.get("audioUrl") or 
+                audio.get("audio_url") or 
+                audio.get("voiceUrl") or 
+                audio.get("voice_url") or 
+                audio.get("src") or 
+                audio.get("source") or
+                audio.get("file") or
+                ""
+            )
             if not audio_url:
-                yield self.chain_reply(event, "❌ 语音URL为空")
+                # 调试信息：显示返回的字段
+                available_keys = list(audio.keys()) if isinstance(audio, dict) else []
+                yield self.chain_reply(event, f"❌ 语音URL为空\n可用字段: {', '.join(available_keys[:10])}")
                 return
 
             # 构建语音信息

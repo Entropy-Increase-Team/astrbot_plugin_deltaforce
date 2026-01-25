@@ -124,10 +124,11 @@ class PlaceTaskPush:
             try:
                 result = await self.api.get_place_status(token)
                 
-                # API 返回格式: {code: 0, data: {...}} 或 {code: xxx, msg: "..."}
-                if result.get("code") != 0:
+                # API 返回格式: {code: 0, data: {...}} 或 {success: true, data: {...}}
+                is_success = isinstance(result, dict) and (result.get("success") == True or result.get("code") == 0)
+                if not is_success:
                     # 检查是否为登录失效 (ret: 101)
-                    data = result.get("data", {})
+                    data = result.get("data", {}) if isinstance(result, dict) else {}
                     if isinstance(data, dict) and data.get("ret") == 101:
                         await self._handle_token_expired(user_id, push_targets)
                     continue

@@ -78,8 +78,8 @@ class DataHandler(BaseHandler):
             yield self.chain_reply(event, "查询数据失败，请检查网络或联系管理员")
             return
 
-        if result.get("success") == False:
-            yield self.chain_reply(event, f"查询数据失败: {result.get('message', '未知API错误')}")
+        if not self.is_success(result):
+            yield self.chain_reply(event, f"查询数据失败：{self.get_error_msg(result)}")
             return
 
         # 解析数据

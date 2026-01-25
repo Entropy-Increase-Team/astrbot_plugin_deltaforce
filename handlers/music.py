@@ -42,9 +42,22 @@ class MusicHandler(BaseHandler):
                 return
 
             music = musics[0]
-            music_url = music.get("url", "")
+            # 支持多种可能的URL字段名
+            music_url = (
+                music.get("url") or 
+                music.get("audioUrl") or 
+                music.get("audio_url") or 
+                music.get("musicUrl") or 
+                music.get("music_url") or 
+                music.get("src") or 
+                music.get("source") or
+                music.get("file") or
+                ""
+            )
             if not music_url:
-                yield self.chain_reply(event, "❌ 音乐URL为空")
+                # 调试信息：显示返回的字段
+                available_keys = list(music.keys()) if isinstance(music, dict) else []
+                yield self.chain_reply(event, f"❌ 音乐URL为空\n可用字段: {', '.join(available_keys[:10])}")
                 return
 
             # 构建音乐信息
