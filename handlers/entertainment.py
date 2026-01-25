@@ -3,15 +3,44 @@
 包含：TTS语音、AI锐评等
 """
 import asyncio
+import time
 from astrbot.api.event import AstrMessageEvent
 import astrbot.api.message_components as Comp
 from .base import BaseHandler
+
+# TTS 缓存（用户ID -> 语音信息）
+# 格式: {user_id: {"audio_url": str, "filename": str, "timestamp": float}}
+tts_cache = {}
+
+# TTS 缓存过期时间（秒）
+TTS_CACHE_EXPIRY = 5 * 60  # 5分钟
 
 
 class EntertainmentHandler(BaseHandler):
     """娱乐处理器"""
 
     # ==================== TTS语音功能 ====================
+
+    def _save_tts_cache(self, user_id: str, audio_url: str, filename: str = ""):
+        """保存TTS缓存"""
+        tts_cache[user_id] = {
+            "audio_url": audio_url,
+            "filename": filename or "tts_audio.wav",
+            "timestamp": time.time()
+        }
+
+    def _get_tts_cache(self, user_id: str):
+        """获取TTS缓存，如果过期则返回None"""
+        cached = tts_cache.get(user_id)
+        if not cached:
+            return None
+        
+        # 检查是否过期
+        if time.time() - cached["timestamp"] > TTS_CACHE_EXPIRY:
+            del tts_cache[user_id]
+            return None
+        
+        return cached
 
     async def get_tts_health(self, event: AstrMessageEvent):
         """获取TTS服务状态"""
@@ -186,7 +215,12 @@ class EntertainmentHandler(BaseHandler):
                 
                 if status == "completed":
                     audio_url = status_result.get("audioUrl") or status_result.get("data", {}).get("audioUrl")
+                    filename = status_result.get("filename") or status_result.get("data", {}).get("filename", "tts_audio.wav")
                     if audio_url:
+                        # 保存TTS缓存
+                        user_id = str(event.get_sender_id())
+                        self._save_tts_cache(user_id, audio_url, filename)
+                        
                         # 返回语音消息
                         yield event.chain_reply([Comp.Record(file=audio_url)])
                         return
@@ -206,6 +240,39 @@ class EntertainmentHandler(BaseHandler):
             
         except Exception as e:
             yield self.chain_reply(event, f"❌ TTS合成失败：{e}")
+
+    async def download_last_tts(self, event: AstrMessageEvent):
+        """下载上次合成的TTS语音文件"""
+        try:
+            user_id = str(event.get_sender_id())
+            cached = self._get_tts_cache(user_id)
+
+            if not cached:
+                yield self.chain_reply(event, "❌ 暂无可下载的语音\n请先使用 /三角洲tts 命令合成语音")
+                return
+
+            audio_url = cached.get("audio_url")
+            filename = cached.get("filename", "tts_audio.wav")
+
+            if not audio_url:
+                yield self.chain_reply(event, "❌ 语音文件不可用")
+                return
+
+            # 发送语音文件链接
+            lines = [
+                "🎵【TTS语音文件】",
+                f"文件名：{filename}",
+                f"下载链接：{audio_url}",
+                "",
+                "💡 提示：语音文件缓存5分钟后过期"
+            ]
+            yield self.chain_reply(event, "\n".join(lines))
+
+            # 再次发送语音便于保存
+            yield event.chain_reply([Comp.Record(file=audio_url)])
+
+        except Exception as e:
+            yield self.chain_reply(event, f"❌ 获取TTS语音失败：{e}")
 
     # ==================== AI锐评功能 ====================
 

@@ -2,6 +2,8 @@
 工具处理器
 包含：价格查询、物品搜索、利润排行等
 """
+import re
+from typing import List, Dict, Tuple
 from astrbot.api.event import AstrMessageEvent
 import astrbot.api.message_components as Comp
 from .base import BaseHandler
@@ -10,6 +12,96 @@ from ..utils.render import Render
 
 class ToolsHandler(BaseHandler):
     """工具处理器"""
+
+    async def parse_item_query(self, query: str, max_results: int = 5) -> Tuple[List[str], List[Dict]]:
+        """
+        通用方法：将物品名称或ID查询转换为物品ID列表和物品信息列表
+        支持ID、名称、逗号分隔的混合查询
+        
+        Args:
+            query: 查询字符串
+            max_results: 最大返回结果数，默认5
+            
+        Returns:
+            (object_ids, items_info): 物品ID列表和物品信息列表
+        """
+        object_ids = []
+        items_info = []
+        
+        # 检查是否包含逗号分隔的多个查询
+        queries = [q.strip() for q in re.split(r'[,，]', query) if q.strip()]
+        
+        if len(queries) > 1:
+            # 多个查询项：分别处理每个查询
+            for single_query in queries:
+                if single_query.isdigit():
+                    # 纯数字，当作ID处理
+                    object_ids.append(single_query)
+                    search_res = await self.api.search_object(object_ids=single_query)
+                    if self.is_success(search_res):
+                        keywords = search_res.get("data", {}).get("keywords", [])
+                        if keywords:
+                            items_info.extend(keywords)
+                        else:
+                            # 如果搜索失败，创建默认项
+                            items_info.append({
+                                "objectID": single_query,
+                                "objectName": f"物品ID: {single_query}"
+                            })
+                    else:
+                        items_info.append({
+                            "objectID": single_query,
+                            "objectName": f"物品ID: {single_query}"
+                        })
+                else:
+                    # 名称查询
+                    search_res = await self.api.search_object(keyword=single_query)
+                    if self.is_success(search_res):
+                        keywords = search_res.get("data", {}).get("keywords", [])
+                        if keywords:
+                            # 对于名称查询，只取第一个最匹配的结果
+                            first_match = keywords[0]
+                            raw_id = first_match.get("objectID")
+                            if raw_id is not None and raw_id != 0 and raw_id != "":
+                                object_ids.append(str(raw_id))
+                                items_info.append(first_match)
+        else:
+            # 单个查询项
+            single_query = queries[0] if queries else ""
+            
+            if single_query.isdigit():
+                # 纯数字ID
+                object_ids = [single_query]
+                search_res = await self.api.search_object(object_ids=single_query)
+                if self.is_success(search_res):
+                    keywords = search_res.get("data", {}).get("keywords", [])
+                    if keywords:
+                        items_info = keywords
+                    else:
+                        items_info = [{
+                            "objectID": single_query,
+                            "objectName": f"物品ID: {single_query}"
+                        }]
+                else:
+                    items_info = [{
+                        "objectID": single_query,
+                        "objectName": f"物品ID: {single_query}"
+                    }]
+            else:
+                # 名称模糊搜索
+                search_res = await self.api.search_object(keyword=single_query)
+                if self.is_success(search_res):
+                    keywords = search_res.get("data", {}).get("keywords", [])
+                    if keywords:
+                        # 取前max_results个结果
+                        selected_items = keywords[:max_results]
+                        for item in selected_items:
+                            raw_id = item.get("objectID")
+                            if raw_id is not None and raw_id != 0 and raw_id != "":
+                                object_ids.append(str(raw_id))
+                                items_info.append(item)
+        
+        return object_ids, items_info
 
     @staticmethod
     def format_price(price) -> str:
@@ -102,29 +194,8 @@ class ToolsHandler(BaseHandler):
 
         query = query.strip()
         
-        # 先搜索物品获取ID
-        object_ids = []
-        items_info = []
-        
-        # 检查是否是有效的数字ID（纯数字且长度合理）
-        if query.isdigit() and len(query) >= 5:
-            # 直接是ID
-            object_ids = [query]
-            items_info = [{"objectID": query, "name": f"物品ID: {query}"}]
-        else:
-            # 名称搜索
-            search_result = await self.api.search_object(keyword=query)
-            if self.is_success(search_result):
-                items = search_result.get("data", {}).get("keywords", [])
-                if items:
-                    # 取前5个结果
-                    for item in items[:5]:
-                        raw_id = item.get("objectID")
-                        # 确保objectID存在且有效
-                        if raw_id is not None and raw_id != 0 and raw_id != "":
-                            oid = str(raw_id)
-                            object_ids.append(oid)
-                            items_info.append(item)
+        # 使用通用方法解析查询
+        object_ids, items_info = await self.parse_item_query(query, max_results=5)
 
         if not object_ids:
             yield self.chain_reply(event, f"未找到与「{query}」相关的物品")
@@ -177,27 +248,15 @@ class ToolsHandler(BaseHandler):
         query = query.strip()
         yield self.chain_reply(event, "正在查询历史价格，请稍候...")
 
-        # 先搜索物品获取ID
-        object_id = None
-        object_name = query
+        # 使用通用方法解析查询（只取第一个结果）
+        object_ids, items_info = await self.parse_item_query(query, max_results=1)
 
-        # 检查是否是有效的数字ID（纯数字且长度合理）
-        if query.isdigit() and len(query) >= 5:
-            object_id = query
-        else:
-            search_result = await self.api.search_object(keyword=query)
-            if self.is_success(search_result):
-                items = search_result.get("data", {}).get("keywords", [])
-                if items:
-                    raw_id = items[0].get("objectID")
-                    # 确保objectID存在且有效
-                    if raw_id is not None and raw_id != 0 and raw_id != "":
-                        object_id = str(raw_id)
-                        object_name = items[0].get("name", items[0].get("objectName", query))
-
-        if not object_id:
+        if not object_ids:
             yield self.chain_reply(event, f"未找到与「{query}」相关的物品")
             return
+
+        object_id = object_ids[0]
+        object_name = items_info[0].get("name", items_info[0].get("objectName", query)) if items_info else query
 
         # 查询历史价格
         result = await self.api.get_price_history(object_id)
@@ -263,27 +322,15 @@ class ToolsHandler(BaseHandler):
         query = query.strip()
         yield self.chain_reply(event, "正在查询利润历史，请稍候...")
 
-        # 先搜索物品获取ID
-        object_id = None
-        object_name = query
+        # 使用通用方法解析查询（只取第一个结果）
+        object_ids, items_info = await self.parse_item_query(query, max_results=1)
 
-        # 检查是否是有效的数字ID（纯数字且长度合理）
-        if query.isdigit() and len(query) >= 5:
-            object_id = query
-        else:
-            search_result = await self.api.search_object(keyword=query)
-            if self.is_success(search_result):
-                items = search_result.get("data", {}).get("keywords", [])
-                if items:
-                    raw_id = items[0].get("objectID")
-                    # 确保objectID存在且有效
-                    if raw_id is not None and raw_id != 0 and raw_id != "":
-                        object_id = str(raw_id)
-                        object_name = items[0].get("name", items[0].get("objectName", query))
-
-        if not object_id:
+        if not object_ids:
             yield self.chain_reply(event, f"未找到与「{query}」相关的物品")
             return
+
+        object_id = object_ids[0]
+        object_name = items_info[0].get("name", items_info[0].get("objectName", query)) if items_info else query
 
         # 查询利润历史 (使用价格历史API + 材料价格计算)
         price_result = await self.api.get_price_history(object_id)
@@ -357,26 +404,15 @@ class ToolsHandler(BaseHandler):
         
         if query and query.strip():
             query = query.strip()
-            # 检查是否是有效的数字ID（纯数字且长度合理）
-            if query.isdigit() and len(query) >= 5:
-                # 直接是ID
-                object_id = query
-                object_name = f"物品ID: {query}"
+            # 使用通用方法解析查询（只取第一个结果）
+            object_ids, items_info = await self.parse_item_query(query, max_results=1)
+            
+            if object_ids:
+                object_id = object_ids[0]
+                object_name = items_info[0].get("name", items_info[0].get("objectName", query)) if items_info else query
             else:
-                # 名称搜索
-                search_result = await self.api.search_object(keyword=query)
-                if self.is_success(search_result):
-                    items = search_result.get("data", {}).get("keywords", [])
-                    if items:
-                        raw_id = items[0].get("objectID")
-                        # 确保objectID存在且有效（数字或数字字符串，不为0）
-                        if raw_id is not None and raw_id != 0 and raw_id != "":
-                            object_id = str(raw_id)
-                            object_name = items[0].get("name", items[0].get("objectName", query))
-                
-                if not object_id:
-                    yield self.chain_reply(event, f"未找到与「{query}」相关的物品")
-                    return
+                yield self.chain_reply(event, f"未找到与「{query}」相关的物品")
+                return
 
         result = await self.api.get_material_price(object_id)
         

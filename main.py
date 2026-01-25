@@ -495,6 +495,12 @@ class DeltaForce(Star):
         async for result in self.entertainment_handler.tts_synthesize(event, args):
             yield result
 
+    @filter.command("三角洲tts上传", alias={"洲tts上传", "三角洲TTS上传", "三角洲tts下载"})
+    async def download_last_tts(self, event: AstrMessageEvent):
+        """下载上次合成的TTS语音"""
+        async for result in self.entertainment_handler.download_last_tts(event):
+            yield result
+
     @filter.command("三角洲ai预设列表", alias={"洲ai预设列表", "三角洲AI预设列表"})
     async def get_ai_presets(self, event: AstrMessageEvent):
         """获取AI预设列表"""
@@ -575,6 +581,24 @@ class DeltaForce(Star):
     async def get_playlist(self, event: AstrMessageEvent, args: str = ""):
         """获取鼠鼠歌单"""
         async for result in self.music_handler.get_playlist(event, args):
+            yield result
+
+    @filter.command("三角洲点歌", alias={"洲点歌", "三角洲听", "三角洲播放"})
+    async def select_music_by_number(self, event: AstrMessageEvent, number: str = ""):
+        """点歌 - 通过序号选择音乐"""
+        async for result in self.music_handler.select_music_by_number(event, number):
+            yield result
+
+    @filter.command("三角洲歌词", alias={"洲歌词", "三角洲鼠鼠歌词"})
+    async def get_lyrics(self, event: AstrMessageEvent):
+        """获取歌词"""
+        async for result in self.music_handler.get_lyrics(event):
+            yield result
+
+    @filter.command("三角洲鼠鼠语音", alias={"洲鼠鼠语音"})
+    async def send_shushu_voice(self, event: AstrMessageEvent):
+        """发送鼠鼠语音"""
+        async for result in self.music_handler.send_voice(event):
             yield result
 
     # ==================== 开黑房间命令 ====================
