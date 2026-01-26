@@ -4,7 +4,7 @@
 from astrbot.api.event import AstrMessageEvent
 import astrbot.api.message_components as Comp
 import urllib.parse
-from typing import Optional, Dict, Any
+from typing import Optional, Dict, Any, Union
 from ..utils.render import Render
 
 
@@ -153,13 +153,20 @@ class BaseHandler:
             return "未知"
 
     @staticmethod
-    def format_timestamp(timestamp: int) -> str:
+    def format_timestamp(timestamp: Union[int, float, str]) -> str:
         """格式化时间戳"""
         import time
-        if timestamp == 0 or timestamp is None:
+        if not timestamp:
             return "未知时间"
         try:
-            return time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(timestamp))
+            # 尝试转换为浮点数
+            ts = float(timestamp)
+            if ts <= 0:
+                return "未知时间"
+            # 兼容毫秒级时间戳 (如果大于 3000年的时间戳，认为是毫秒)
+            if ts > 32503680000:
+                ts = ts / 1000
+            return time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(ts))
         except:
             return "时间格式错误"
 

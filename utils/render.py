@@ -28,8 +28,13 @@ class Render:
     PLUGIN_ROOT = Path(__file__).parent.parent
     # 资源目录
     RESOURCES_PATH = PLUGIN_ROOT / "resources"
-    # 模板目录
+    
+    # 模板目录 (处理大小写问题)
     TEMPLATE_PATH = RESOURCES_PATH / "Template"
+    if not TEMPLATE_PATH.exists():
+        if (RESOURCES_PATH / "template").exists():
+            TEMPLATE_PATH = RESOURCES_PATH / "template"
+            
     # 公共资源目录
     COMMON_PATH = RESOURCES_PATH / "common"
     
@@ -188,89 +193,8 @@ class Render:
                         container = await page.query_selector('body')
 
                     if container:
-                        # 使用 JavaScript 获取元素的实际完整尺寸（包括溢出部分）
-                        dimensions = await page.evaluate("""
-                            (element) => {
-                                // 获取元素的完整滚动尺寸
-                                const rect = element.getBoundingClientRect();
-                                const scrollWidth = Math.max(element.scrollWidth, element.offsetWidth, rect.width);
-                                const scrollHeight = Math.max(element.scrollHeight, element.offsetHeight, rect.height);
-                                
-                                // 获取所有子元素的最大边界
-                                let maxBottom = scrollHeight;
-                                let maxRight = scrollWidth;
-                                
-                                const allElements = element.querySelectorAll('*');
-                                allElements.forEach(el => {
-                                    const elRect = el.getBoundingClientRect();
-                                    const elBottom = elRect.bottom - rect.top;
-                                    const elRight = elRect.right - rect.left;
-                                    if (elBottom > maxBottom) maxBottom = elBottom;
-                                    if (elRight > maxRight) maxRight = elRight;
-                                });
-                                
-                                // 添加一些边距
-                                return {
-                                    x: rect.x,
-                                    y: rect.y,
-                                    width: Math.ceil(maxRight) + 20,
-                                    height: Math.ceil(maxBottom) + 20
-                                };
-                            }
-                        """, container)
-                        
-                        if dimensions and dimensions['width'] > 0 and dimensions['height'] > 0:
-                            # 确保截图区域不超出视口
-                            clip_width = min(dimensions['width'], width)
-                            clip_height = min(dimensions['height'], height)
-                            
-                            # 如果内容超出视口，需要先调整视口大小
-                            if dimensions['height'] > height or dimensions['width'] > width:
-                                new_width = max(width, int(dimensions['width']) + 50)
-                                new_height = max(height, int(dimensions['height']) + 50)
-                                await page.set_viewport_size({'width': new_width, 'height': new_height})
-                                await page.wait_for_timeout(300)
-                                
-                                # 重新获取尺寸
-                                dimensions = await page.evaluate("""
-                                    (element) => {
-                                        const rect = element.getBoundingClientRect();
-                                        const scrollHeight = Math.max(element.scrollHeight, element.offsetHeight, rect.height);
-                                        const scrollWidth = Math.max(element.scrollWidth, element.offsetWidth, rect.width);
-                                        
-                                        let maxBottom = scrollHeight;
-                                        let maxRight = scrollWidth;
-                                        
-                                        const allElements = element.querySelectorAll('*');
-                                        allElements.forEach(el => {
-                                            const elRect = el.getBoundingClientRect();
-                                            const elBottom = elRect.bottom - rect.top;
-                                            const elRight = elRect.right - rect.left;
-                                            if (elBottom > maxBottom) maxBottom = elBottom;
-                                            if (elRight > maxRight) maxRight = elRight;
-                                        });
-                                        
-                                        return {
-                                            x: rect.x,
-                                            y: rect.y,
-                                            width: Math.ceil(maxRight) + 20,
-                                            height: Math.ceil(maxBottom) + 20
-                                        };
-                                    }
-                                """, container)
-                            
-                            # 截取实际内容区域
-                            screenshot = await page.screenshot(
-                                clip={
-                                    'x': max(0, dimensions['x']),
-                                    'y': max(0, dimensions['y']),
-                                    'width': dimensions['width'],
-                                    'height': dimensions['height']
-                                },
-                                type='png'
-                            )
-                        else:
-                            screenshot = await page.screenshot(full_page=True, type='png')
+                        # 直接对容器元素进行截图，这会自动处理尺寸和裁剪，且不会有额外白边
+                        screenshot = await container.screenshot(type='png')
                     else:
                         screenshot = await page.screenshot(full_page=True, type='png')
                     
@@ -419,6 +343,41 @@ class Render:
             return None
         
         return (cls.RESOURCES_PATH / f"imgs/rank/{mode_key}/{rank_code}.webp").as_uri()
+
+    @classmethod
+    def get_map_image(cls, map_name: str, mode: str = 'sol') -> Optional[str]:
+        """
+        获取地图图片路径
+        
+        Args:
+            map_name: 地图名称（如"零号大坝-常规"）
+            mode: 游戏模式 ('sol' 烽火地带 或 'mp'/'tdm' 全面战场)
+        
+        Returns:
+            地图图片的 absolute file URI
+        """
+        if not map_name:
+            return None
+            
+        prefix = "烽火" if mode == 'sol' else "全面"
+        ext = "png" if mode == 'sol' else "jpg"
+        
+        # 尝试直接拼接
+        file_name = f"{prefix}-{map_name}.{ext}"
+        file_path = cls.RESOURCES_PATH / f"imgs/map/{file_name}"
+        
+        if file_path.exists():
+            return file_path.as_uri()
+            
+        # 尝试去掉后缀匹配 (仅烽火)
+        if mode == 'sol':
+             import re
+             # 清理后缀，尝试匹配基础地图图片（如果有的话，或者回退逻辑）
+             # 这里简单处理，如果找不到且是烽火模式，尝试查找包含该名称的文件
+             # 但目前看图片命名是完整的，所以直接返回可能存在的默认图或者None
+             pass
+
+        return None
 
 
 # 便捷函数

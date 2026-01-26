@@ -11,7 +11,7 @@ body {
     color: #fff;
     font-family: 'ProjectD', "Microsoft YaHei", sans-serif;
     margin: 0;
-    width: 2000px; /* 保持原稿宽度 */
+    width: 2000px !important; /* TS 版本宽度 */
 }
 
 .container {
@@ -19,8 +19,7 @@ body {
     position: relative;
     min-height: 1200px;
     box-sizing: border-box;
-    overflow: visible;
-    padding-bottom: 80px;
+    overflow: hidden;
 }
 
 /* 背景装饰 */
@@ -103,43 +102,48 @@ body {
     border-left: 4px solid rgba(255,255,255,0.2);
     padding: 25px;
     margin-bottom: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
 }
 
 .kd-label {
-    font-size: 20px;
+    font-size: 24px;
     color: #FFFFFF;
-    margin-bottom: 20px;
+    margin-bottom: 0;
+    margin-right: 30px;
     font-weight: 700;
 }
 
 .kd-grid {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 20px;
+    display: flex;
+    gap: 40px;
+    flex: 1;
+    justify-content: flex-end;
 }
 
 .kd-item {
     display: flex;
-    flex-direction: column;
+    flex-direction: row;
     align-items: center;
-    text-align: center;
+    gap: 15px;
 }
 
 .kd-item small {
     display: block;
-    color: #FFFFFF;
-    font-size: 16px;
-    margin-bottom: 8px;
+    color: #aaa;
+    font-size: 18px;
+    margin-bottom: 0;
     font-weight: 700;
     text-transform: uppercase;
-    letter-spacing: 1px;
 }
 
 .kd-item span {
-    font-size: 36px;
+    font-size: 32px;
     font-weight: 800;
     color: var(--primary-color);
     font-family: 'ProjectD', 'D-DIN', sans-serif;
+    line-height: 1;
 }
 
 /* 区块样式 */

@@ -351,5 +351,5 @@ body {
 
 /* 页脚样式已在 common.css 中定义，此处仅覆盖特定样式 */
 .template-footer {
-    padding: 15px 20px;
+    display: none;
 }

@@ -508,7 +508,7 @@ class EntertainmentHandler(BaseHandler):
             return
 
         try:
-            result = await self.api.get_weekly_record(token, "", True)
+            result = await self.api.get_weekly_record(token, "", is_show_null_friend=True)
 
             if not self.is_success(result):
                 yield self.chain_reply(event, f"❌ 获取周报失败：{self.get_error_msg(result)}")

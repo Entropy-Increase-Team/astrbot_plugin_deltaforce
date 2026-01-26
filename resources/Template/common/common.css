@@ -138,15 +138,7 @@ body {
 
 /* ========== 页脚通用样式 ========== */
 .template-footer {
-  position: relative;
-  z-index: 2;
-  padding: 20px 28px 24px;
-  background: rgba(15, 247, 150, 0.02);
-  border-top: 1px solid rgba(15, 247, 150, 0.1);
-  margin-top: auto;
-  width: 100%;
-  box-sizing: border-box;
-  flex-shrink: 0;
+  display: none;
 }
 
 .copyright-text {

@@ -32,9 +32,9 @@
 
     <!-- 数据看板 -->
     <div class="dashboard-section">
-        <div class="dashboard-grid {% if mpDetail %}mp-grid{% endif %}">
+        <div class="dashboard-grid">
             {% if solDetail %}
-            <!-- 第一行：段位、总撤离、总带出价值、收藏大红（固定4个） -->
+            <!-- Sol 数据 1-8 -->
             <div class="data-node highlight">
                 <div class="node-label"><i class="icon-rank"></i> 段位 / OPERATOR RANK</div>
                 <div class="rank-display">
@@ -52,11 +52,10 @@
                 <div class="node-label">总带出价值 / TOTAL VALUE</div>
                 <span class="node-value large">{{ solDetail.totalGainedPriceFormatted | default('-') }}</span>
             </div>
-                <div class="data-node highlight">
-                    <div class="node-label">收藏大红 / COLLECTION VALUE</div>
-                    <span class="node-value large">{{ solDetail.redTotalMoneyStr | default('-') }}</span>
-                </div>
-            <!-- 第二行：其他数据（4个一行） -->
+            <div class="data-node highlight">
+                <div class="node-label">收藏大红 / COLLECTION VALUE</div>
+                <span class="node-value large">{{ solDetail.redTotalMoneyStr | default('-') }}</span>
+            </div>
             <div class="data-node highlight">
                 <div class="node-label">用户排名 / USER RANK</div>
                 <span class="node-value highlight-green">{{ solDetail.userRank | default('-') }}</span>
@@ -76,7 +75,7 @@
             {% endif %}
 
             {% if mpDetail %}
-            <!-- 第一行：5个数据 -->
+            <!-- MP 数据 9-18 -->
             <div class="data-node highlight">
                 <div class="node-label">段位 / BATTLEFIELD RANK</div>
                 <div class="rank-display">
@@ -102,7 +101,6 @@
                 <div class="node-label">每分钟得分 / SCORE PER MINUTE</div>
                 <span class="node-value">{{ mpDetail.avgScorePerMinuteFormatted | default('-') }}</span>
             </div>
-            <!-- 第二行：5个数据 -->
             <div class="data-node highlight">
                 <div class="node-label">总对局 / TOTAL FIGHTS</div>
                 <span class="node-value large">{{ mpDetail.totalFight | default('-') }}</span>
@@ -204,28 +202,36 @@
                 </div>
                 {% endfor %}
             {% else %}
-                 <div style="color: #999; padding: 20px;">暂无常用武器数据</div>
+                <div style="color: #999; padding: 20px;">暂无常用武器数据</div>
             {% endif %}
         </div>
     </div>
     {% endif %}
 
-    <!-- 收藏品展示 (仅烽火地带) -->
+    <!-- 收藏品 (仅烽火地带) -->
     {% if solDetail %}
     <div class="section-block">
         <div class="section-header">
-            <span class="dot"></span> 收藏品 / COLLECTIONS
+            <span class="dot"></span> 收藏品 / HIGH-VALUE ASSETS
         </div>
-        <div class="collection-list">
+        <div class="asset-list">
             {% if solDetail.redList and solDetail.redList | length > 0 %}
                 {% for item in solDetail.redList %}
-                <div class="collection-item">
-                    <img src="{{ item.imageUrl }}" alt="{{ item.name }}" onerror="this.style.display='none';" />
-                    <div class="count-badge">{{ item.count }}</div>
+                <div class="asset-item">
+                    <div class="asset-img-box">
+                        <img src="{{ item.imageUrl }}" alt="{{ item.name }}" onerror="this.style.display='none';" />
+                    </div>
+                    <div class="asset-info">
+                        <div class="asset-name">{{ item.name }}</div>
+                        <div class="asset-meta">
+                            <span class="asset-price">{{ item.price | default('-') }}</span>
+                            <span class="asset-count">X{{ item.count }}</span>
+                        </div>
+                    </div>
                 </div>
                 {% endfor %}
             {% else %}
-               <div style="color: #999; padding: 20px;">暂无大红藏品记录</div>
+                <div style="color: #999; padding: 20px;">暂无大红藏品记录</div>
             {% endif %}
         </div>
     </div>
@@ -233,7 +239,7 @@
 
     <!-- 版权信息 -->
     <div class="footer">
-        Data source: Official API | Powered by Delta-Force-Plugin
+        Data source: Official API | Powered by astrbot_plugin_deltaforce
     </div>
 </div>
 {% endblock %}

@@ -704,12 +704,7 @@ body:has(.container.single-mode) {
 
 /* ========== 页脚 ========== */
 .template-footer {
-    position: relative;
-    z-index: 2;
-    padding: 20px;
-    text-align: center;
-    background: rgba(0, 0, 0, 0.3);
-    border-top: 1px solid var(--border-color);
+    display: none;
 }
 
 .copyright-text {

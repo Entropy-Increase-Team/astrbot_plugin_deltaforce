@@ -371,7 +371,7 @@ body {
 
 /* 页脚 */
 .template-footer {
-    padding: 15px 20px;
+    display: none;
 }
 
 .copyright-text {

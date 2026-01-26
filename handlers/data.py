@@ -4,6 +4,7 @@
 """
 from astrbot.api.event import AstrMessageEvent
 import astrbot.api.message_components as Comp
+from datetime import datetime
 from .base import BaseHandler
 from ..utils.render import Render
 
@@ -31,6 +32,77 @@ class DataHandler(BaseHandler):
         (5000, '将军 V'), (5400, '将军 IV'), (5800, '将军 III'), (6200, '将军 II'), (6600, '将军 I'),
         (7000, '统帅'),
     ]
+
+    # 硬编码地图ID映射（作为兜底）
+    MAP_ID_MAPPING = {
+        "101": "零号大坝-常规", "102": "零号大坝-机密", "103": "零号大坝-绝密",
+        "201": "长弓溪谷-常规", "202": "长弓溪谷-机密", "203": "长弓溪谷-绝密",
+        "301": "航天基地-常规", "302": "航天基地-机密", "303": "航天基地-绝密",
+        "401": "巴克什-常规", "402": "巴克什-机密", "403": "巴克什-绝密",
+        "1101": "零号大坝-全面", "1201": "长弓溪谷-全面", "1301": "攀升", "1401": "裂痕",
+        "2002": "堑壕战", "2007": "全面-攀升", "5001": "临界点",
+        # 兼容用户已知的奇怪ID
+        "1981": "航天基地-常规", "1121": "零号大坝-常规", "154": "巴克什-常规",
+        "121": "零号大坝-常规", "54": "巴克什-常规",
+        # 更多映射可自行补充，优先尝试使用 search_object 接口或 ID 直接显示
+    }
+
+    def _format_price(self, price):
+        """格式化金钱"""
+        if not price:
+            return '-'
+        try:
+            num = float(price)
+            if num >= 1000000000:
+                return f"{num / 1000000000:.2f}B"
+            elif num >= 1000000:
+                return f"{num / 1000000:.2f}M"
+            elif num >= 1000:
+                return f"{num / 1000:.1f}K"
+            else:
+                return f"{int(num)}"
+        except:
+            return str(price)
+
+    def _format_kd(self, kd):
+        """格式化KD"""
+        if kd is None:
+            return '-'
+        try:
+            return f"{float(kd) / 100:.2f}"
+        except:
+            return '-'
+            
+    def _format_rate(self, rate):
+        """格式化百分比 (输入可能是整数如 2500 表示 25.00%)"""
+        if rate is None:
+            return '-'
+        try:
+            # 假设输入是放大100倍的整数
+            if float(rate) > 1: 
+                return f"{float(rate)/100:.1f}%"
+            # 如果输入已经是小数
+            return f"{float(rate)*100:.1f}%"
+        except:
+            return '-'
+
+    async def _get_object_names(self, ids: list) -> dict:
+        """批量获取物品名称"""
+        if not ids:
+            return {}
+        try:
+            # 去重
+            ids = list(set(str(i) for i in ids))
+            # 批量查询
+            res = await self.api.search_object(object_ids=",".join(ids))
+            name_map = {}
+            if self.is_success(res):
+                keywords = res.get("data", {}).get("keywords", [])
+                for item in keywords:
+                    name_map[str(item.get("objectID"))] = item.get("name") or item.get("objectName")
+            return name_map
+        except Exception as e:
+            return {}
 
     def get_rank_by_score(self, score: int, mode: str = 'sol') -> str:
         """根据分数获取段位名称"""
@@ -101,18 +173,184 @@ class DataHandler(BaseHandler):
             yield self.chain_reply(event, "暂未查询到该账号的游戏数据")
             return
 
+        # ---------------- 数据预处理 ----------------
+        
+        # 1. 批量查询物品名称 (收藏品、武器)
+        query_ids = set()
+        if sol_detail:
+            for item in sol_detail.get('redList', []) or []:
+                if item.get('objectID'): query_ids.add(item['objectID'])
+            for item in sol_detail.get('gunPlayList', []) or []:
+                if item.get('objectID'): query_ids.add(item['objectID'])
+        
+        name_map = await self._get_object_names(list(query_ids))
+
+        # 2. 处理烽火地带数据
+        processed_sol = None
+        if sol_detail and (not mode or mode == "sol"):
+            processed_sol = sol_detail.copy()
+            # 格式化基础数据
+            processed_sol['totalGainedPriceFormatted'] = self._format_price(sol_detail.get('totalGainedPrice'))
+            processed_sol['redTotalMoneyStr'] = self._format_price(sol_detail.get('redTotalMoney') or sol_detail.get('totalMoney')) # 兼容字段
+            processed_sol['kdRatio'] = self._format_kd(sol_detail.get('kdRatio')) # 原始数据可能是整数(放大100倍)或小数
+            
+            # TS 模板兼容别名
+            processed_sol['totalEscape'] = sol_detail.get('escapeGames', 0)
+            processed_sol['totalFight'] = sol_detail.get('totalGames', 0)
+            processed_sol['totalKill'] = sol_detail.get('totalKills', 0)
+            processed_sol['userRank'] = sol_detail.get('userRank', '-')
+            processed_sol['lowKD'] = self._format_kd(sol_detail.get('lowKillDeathRatio'))
+            processed_sol['medKD'] = self._format_kd(sol_detail.get('medKillDeathRatio'))
+            processed_sol['highKD'] = self._format_kd(sol_detail.get('highKillDeathRatio'))
+            
+            processed_sol['headshotRate'] = self._format_rate(sol_detail.get('headshotRate'))
+            processed_sol['escapeRate'] = self._format_rate(sol_detail.get('escapeRate'))
+            processed_sol['totalGameTime'] = self.format_duration(sol_detail.get('totalDuration', 0))
+            
+            # 处理地图列表
+            raw_map_list = sol_detail.get('mapList', []) or []
+            # 丰富地图信息
+            enriched_maps = []
+            for m in raw_map_list:
+                map_id = str(m.get('mapID'))
+                # 优先查表以确保名称格式统一（包含难度后缀），否则使用 API 返回的名称
+                map_name = self.MAP_ID_MAPPING.get(map_id) or m.get('mapName') or f"未知地图({map_id})"
+                # 分组基准名 (去除后缀)
+                import re
+                base_map_name = re.sub(r'-?(常规|机密|绝密|水淹|适应|前夜|永夜|终夜|普通|困难|极限)$', '', map_name)
+                
+                enriched_maps.append({
+                    **m,
+                    'mapName': map_name,
+                    'baseMapName': base_map_name,
+                    'mapImage': Render.get_map_image(map_name, 'sol') or "",
+                })
+            
+            # 分组
+            map_groups = {}
+            # 固定排序
+            map_order = ['零号大坝', '长弓溪谷', '巴克什', '航天基地', '潮汐监狱']
+            for m in enriched_maps:
+                base = m['baseMapName']
+                if base not in map_groups:
+                    map_groups[base] = []
+                map_groups[base].append(m)
+            
+            final_map_list = []
+            # 先按固定顺序添加存在的组
+            for base in map_order:
+                if base in map_groups:
+                    group_maps = map_groups[base]
+                    # 组内按场次降序
+                    group_maps.sort(key=lambda x: x.get('totalCount', 0), reverse=True)
+                    final_map_list.append({'baseMapName': base, 'maps': group_maps})
+                    del map_groups[base]
+            
+            # 添加剩余的组
+            for base, maps in map_groups.items():
+                maps.sort(key=lambda x: x.get('totalCount', 0), reverse=True)
+                final_map_list.append({'baseMapName': base, 'maps': maps})
+                
+            processed_sol['mapList'] = final_map_list
+
+            # 处理武器列表
+            raw_guns = sol_detail.get('gunPlayList', []) or []
+            processed_guns = []
+            for g in raw_guns:
+                oid = str(g.get('objectID'))
+                name = name_map.get(oid) or f"武器({oid})"
+                processed_guns.append({
+                    **g,
+                    'weaponName': name,
+                    'imageUrl': f"https://playerhub.df.qq.com/playerhub/60004/object/{oid}.png",
+                    'totalPriceFormatted': self._format_price(g.get('totalPrice')),
+                    'fightCount': g.get('fightCount', 0),
+                    'escapeCount': g.get('escapeCount', 0),
+                })
+            # 按收益降序取前10
+            processed_guns.sort(key=lambda x: x.get('totalPrice', 0) or 0, reverse=True)
+            processed_sol['gunPlayList'] = processed_guns[:10]
+
+            # 处理收藏品 (兼容 TS 逻辑：取前10)
+            raw_reds = sol_detail.get('redCollectionDetail', []) or sol_detail.get('redList', []) or []
+            processed_reds = []
+            for r in raw_reds:
+                oid = str(r.get('objectID'))
+                name = name_map.get(oid) or f"物品({oid})"
+                price = r.get('price') or r.get('totalPrice') or 0
+                processed_reds.append({
+                    **r,
+                    'name': name,
+                    'objectName': name, # TS 字段
+                    'imageUrl': f"https://playerhub.df.qq.com/playerhub/60004/object/{oid}.png",
+                    'count': r.get('count', r.get('totalCount', 0)),
+                    'price': self._format_price(price),
+                    'priceFormatted': self._format_price(price), # TS 字段
+                    '_raw_price': float(price) if price else 0
+                })
+            # 按价格降序
+            processed_reds.sort(key=lambda x: x['_raw_price'], reverse=True)
+            # 取前10
+            processed_sol['redList'] = processed_reds[:10]
+            processed_sol['redCollectionList'] = processed_reds[:10]
+
+        # 3. 处理全面战场数据
+        processed_mp = None
+        if mp_detail and (not mode or mode == "mp"):
+            processed_mp = mp_detail.copy()
+            processed_mp['winRatio'] = processed_mp.get('winRate') # 兼容字段名
+            processed_mp['totalScoreStr'] = self._format_price(mp_detail.get('totalScore')) 
+            processed_mp['avgKillPerMinuteFormatted'] = f"{float(mp_detail.get('avgKillPerMinute', 0))/100:.2f}"
+            processed_mp['avgScorePerMinuteFormatted'] = f"{float(mp_detail.get('avgScorePerMinute', 0))/100:.2f}"
+            processed_mp['totalGameTime'] = self.format_duration(mp_detail.get('totalDuration', 0), 'minutes')
+            
+            # TS 模板兼容别名
+            processed_mp['totalFight'] = mp_detail.get('totalGames', 0)
+            processed_mp['totalWin'] = mp_detail.get('winGames', 0)
+            processed_mp['totalVehicleKill'] = mp_detail.get('vehicleKills', 0) # API key might vary, assuming vehicleKills or checking?
+            # Actually standard API: vehicleKills?
+            # Let's check get_record or similar? 
+            # Assuming 'vehicleKills' or 'totalVehicleKills'. 
+            # If not sure, use safe get.
+            processed_mp['totalVehicleKill'] = mp_detail.get('vehicleKills') or mp_detail.get('totalVehicleKills', 0)
+            processed_mp['totalVehicleDestroyed'] = mp_detail.get('vehicleDestroyed') or mp_detail.get('totalVehicleDestroyed', 0)
+
+            # 处理地图
+            raw_mp_maps = mp_detail.get('mapList', []) or []
+            processed_mp_maps = []
+            for m in raw_mp_maps:
+                map_id = str(m.get('mapID'))
+                map_name = m.get('mapName') or self.MAP_ID_MAPPING.get(map_id) or f"未知地图({map_id})"
+                processed_mp_maps.append({
+                    **m,
+                    'mapName': map_name,
+                    'mapImage': Render.get_map_image(map_name, 'mp') or "",
+                })
+            processed_mp_maps.sort(key=lambda x: x.get('totalCount', 0), reverse=True)
+            processed_mp['mapList'] = processed_mp_maps[:10]
+
+
         # 准备渲染数据
         render_data = {
             'backgroundImage': Render.get_background_image(),
             'season': season if season != 'all' else '全部',
             'mode': mode,
-            'solDetail': sol_detail if sol_detail and (not mode or mode == "sol") else None,
-            'mpDetail': mp_detail if mp_detail and (not mode or mode == "mp") else None,
+            'userName': result.get("roleInfo", {}).get("charac_name", "未知战士"),
+            'userAvatar': result.get("roleInfo", {}).get("picurl") or f"http://q.qlogo.cn/headimg_dl?dst_uin={event.get_sender_id()}&spec=640",
+            'qqAvatarUrl': f"http://q.qlogo.cn/headimg_dl?dst_uin={event.get_sender_id()}&spec=640",
+            'currentDate': datetime.fromtimestamp(event.message_obj.timestamp).strftime("%Y-%m-%d") if hasattr(event.message_obj, 'timestamp') and isinstance(event.message_obj.timestamp, (int, float)) else (event.message_obj.timestamp.strftime("%Y-%m-%d") if hasattr(event.message_obj, 'timestamp') and hasattr(event.message_obj.timestamp, 'strftime') else ""),
+            
+            'solDetail': processed_sol,
+            'mpDetail': processed_mp,
+            
             # 烽火地带段位
+            'solRank': self.get_rank_by_score(sol_detail.get('rankPoint', 0), 'sol') if sol_detail else '-',
             'solRankImage': Render.get_rank_image(
                 self.get_rank_by_score(sol_detail.get('rankPoint', 0), 'sol'), 'sol'
             ) if sol_detail else None,
+            
             # 全面战场段位
+            'mpRank': self.get_rank_by_score(mp_detail.get('rankPoint', 0), 'tdm') if mp_detail else '-',
             'mpRankImage': Render.get_rank_image(
                 self.get_rank_by_score(mp_detail.get('rankPoint', 0), 'tdm'), 'mp'
             ) if mp_detail else None,
@@ -124,8 +362,7 @@ class DataHandler(BaseHandler):
             'personalData/personalData.html',
             render_data,
             fallback_text=self._build_personal_data_text(season, mode, sol_detail, mp_detail),
-            width=2000,
-            height=1000
+            width=2000
         )
 
     def _build_personal_data_text(self, season, mode, sol_detail, mp_detail):

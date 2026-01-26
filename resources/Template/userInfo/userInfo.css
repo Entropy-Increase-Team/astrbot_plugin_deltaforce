@@ -3,7 +3,7 @@ body {
     padding: 0;
     font-family: 'ProjectD', 'Microsoft YaHei', sans-serif;
     background: white;
-    width: 1365px;
+    width: 1365px !important;
     min-height: 640px;
     overflow: visible;
     /* 移除固定缩放，提升性能 */

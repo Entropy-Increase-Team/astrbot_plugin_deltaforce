@@ -7,6 +7,14 @@ from typing import Optional, Dict, Any, List, Set
 logger = logging.getLogger(__name__)
 
 
+class ServerError(Exception):
+    """服务器错误异常（5xx），用于触发重试和地址切换"""
+    def __init__(self, status_code: int, message: str = ""):
+        self.status_code = status_code
+        self.message = message
+        super().__init__(f"服务器错误 ({status_code}): {message}")
+
+
 class ApiUrlManager:
     """
     API URL 管理器
@@ -116,7 +124,8 @@ class DeltaForceAPI:
         return self.url_manager.get_status()
     
     async def _make_request(self, method: str, url: str, params: Optional[Dict] = None,
-                            json_data: Optional[Dict] = None, form_data: Optional[Dict] = None) -> Dict:
+                            json_data: Optional[Dict] = None, form_data: Optional[Dict] = None,
+                            auth: bool = True) -> Dict:
         """
         统一的请求方法，支持自动重试和故障转移
         
@@ -126,11 +135,14 @@ class DeltaForceAPI:
             params: URL参数
             json_data: JSON请求体
             form_data: 表单数据
+            auth: 是否需要鉴权 Header
         
         Returns:
             API响应结果
         """
-        headers = {"Authorization": f"Bearer {self.token}"}
+        headers = {}
+        if auth and self.token:
+            headers["Authorization"] = f"Bearer {self.token}"
         
         # 获取可用地址列表
         available_urls = self.url_manager.get_available_urls()
@@ -142,6 +154,7 @@ class DeltaForceAPI:
             available_urls = self.url_manager.get_available_urls()
         
         last_error = None
+        last_result = None
         
         # 遍历所有可用地址
         for base_url in available_urls:
@@ -155,20 +168,42 @@ class DeltaForceAPI:
                         if method.upper() == "GET":
                             async with session.get(full_url, headers=headers, params=params) as response:
                                 result = await self._handle_response(response)
+                                # 请求成功（业务成功）
                                 if result.get("code") == 200 or result.get("code") == 0:
                                     logger.debug(f"[ApiUrlManager] 请求成功: {base_url}")
                                     return result
-                                # 非200但不是网络错误，直接返回
+                                # 5xx服务器错误，应该重试和切换地址
+                                status_code = result.get("code", 0)
+                                if 500 <= status_code < 600:
+                                    last_error = f"服务器错误 ({status_code})"
+                                    last_result = result
+                                    logger.warning(f"[ApiUrlManager] 地址 {base_url} 第 {attempt} 次请求返回 {status_code}")
+                                    # 继续重试，不直接返回
+                                    raise ServerError(status_code, result.get("msg", "服务器错误"))
+                                # 其他非5xx错误（如400、401、403、404等），直接返回，不重试
                                 return result
                         else:  # POST
                             async with session.post(full_url, headers=headers, 
                                                    json=json_data, data=form_data) as response:
                                 result = await self._handle_response(response)
+                                # 请求成功（业务成功）
                                 if result.get("code") == 200 or result.get("code") == 0:
                                     logger.debug(f"[ApiUrlManager] 请求成功: {base_url}")
                                     return result
+                                # 5xx服务器错误，应该重试和切换地址
+                                status_code = result.get("code", 0)
+                                if 500 <= status_code < 600:
+                                    last_error = f"服务器错误 ({status_code})"
+                                    last_result = result
+                                    logger.warning(f"[ApiUrlManager] 地址 {base_url} 第 {attempt} 次请求返回 {status_code}")
+                                    # 继续重试，不直接返回
+                                    raise ServerError(status_code, result.get("msg", "服务器错误"))
+                                # 其他非5xx错误（如400、401、403、404等），直接返回，不重试
                                 return result
-                                
+                
+                except ServerError as e:
+                    last_error = str(e)
+                    # ServerError表示5xx错误，继续重试逻辑
                 except asyncio.TimeoutError:
                     last_error = f"请求超时 ({self.url_manager.timeout}s)"
                     logger.warning(f"[ApiUrlManager] 地址 {base_url} 第 {attempt} 次请求超时")
@@ -176,18 +211,25 @@ class DeltaForceAPI:
                     last_error = str(e)
                     logger.warning(f"[ApiUrlManager] 地址 {base_url} 第 {attempt} 次请求失败: {e}")
                 except Exception as e:
-                    last_error = str(e)
-                    logger.warning(f"[ApiUrlManager] 地址 {base_url} 第 {attempt} 次请求异常: {e}")
+                    # 避免捕获ServerError以外的自定义异常
+                    if isinstance(e, ServerError):
+                        last_error = str(e)
+                    else:
+                        last_error = str(e)
+                        logger.warning(f"[ApiUrlManager] 地址 {base_url} 第 {attempt} 次请求异常: {e}")
                 
                 # 如果不是最后一次重试，等待后继续
                 if attempt < self.url_manager.retry_count:
                     await asyncio.sleep(0.5 * attempt)  # 递增等待时间
             
-            # 当前地址所有重试都失败，标记为失败
+            # 当前地址所有重试都失败，标记为失败并尝试下一个地址
             logger.error(f"[ApiUrlManager] 地址 {base_url} 重试 {self.url_manager.retry_count} 次后仍然失败")
             self.url_manager.mark_url_failed(base_url)
+            logger.info(f"[ApiUrlManager] 切换到下一个可用地址")
         
         # 所有地址都失败
+        if last_result:
+            return last_result
         return {"code": -1, "msg": f"所有 API 地址都请求失败: {last_error}", "data": None}
     
     async def _handle_response(self, response: aiohttp.ClientResponse) -> Dict:
@@ -210,19 +252,19 @@ class DeltaForceAPI:
                 error_msg = f"响应格式错误: {text[:100]}"
             return {"code": response.status, "msg": error_msg, "data": None}
     
-    async def req_get(self, url: str, params: Optional[Dict] = None) -> Dict:
+    async def req_get(self, url: str, params: Optional[Dict] = None, auth: bool = True) -> Dict:
         """GET 请求"""
-        return await self._make_request("GET", url, params=params)
+        return await self._make_request("GET", url, params=params, auth=auth)
     
-    async def req_post(self, url: str, json: Optional[Dict] = None, data: Optional[Dict] = None) -> Dict:
+    async def req_post(self, url: str, json: Optional[Dict] = None, data: Optional[Dict] = None, auth: bool = True) -> Dict:
         """POST 请求"""
-        return await self._make_request("POST", url, json_data=json, form_data=data)
+        return await self._make_request("POST", url, json_data=json, form_data=data, auth=auth)
 
     ################################################################
     async def user_bind(self, platformId:str, frameworkToken:str):
         return await self.req_post(
             url = "/user/bind",
-            data = {
+            json = {
                 "platformID": platformId,
                 "frameworkToken": frameworkToken,
                 "clientID": self.clientid,
@@ -233,7 +275,7 @@ class DeltaForceAPI:
     async def user_unbind(self, platformId:str, frameworkToken:str):
         return await self.req_post(
             url = "/user/unbind",
-            data = {
+            json = {
                 "platformID": platformId,
                 "frameworkToken": frameworkToken,
                 "clientID": self.clientid,
@@ -260,7 +302,7 @@ class DeltaForceAPI:
     
     async def login_qqck_get_status(self, frameworkToken: str):
         return await self.req_get(
-            url="/login/qq/status", 
+            url="/login/qq/ck/status", 
             params = {
                 "frameworkToken": frameworkToken
             }
@@ -273,7 +315,7 @@ class DeltaForceAPI:
         return await self.req_get(
             url="/login/qq/status", 
             params = {
-                "frameworkToken": frameworkToken
+                "token": frameworkToken
             }
         )
 
@@ -347,13 +389,14 @@ class DeltaForceAPI:
             }
         )
 
-    async def get_personal_info(self, frameworkToken: str):
+    async def get_personal_info(self, frameworkToken: str, seasonid: str = ""):
         """获取个人信息"""
+        params = {"frameworkToken": frameworkToken}
+        if seasonid:
+            params["seasonid"] = seasonid
         return await self.req_get(
-            url="/df/person/info",
-            params = {
-                "frameworkToken": frameworkToken
-            }
+            url="/df/person/personalinfo",
+            params=params
         )
 
     async def get_personal_data(self, frameworkToken: str, mode: str = "", season: str = "7"):
@@ -363,7 +406,7 @@ class DeltaForceAPI:
             params["type"] = mode
         if season != "all":
             params["seasonid"] = season
-        return await self.req_get(url="/df/person/personalData", params=params)
+        return await self.req_get(url="/df/person/PersonalData", params=params)
 
     async def get_flows(self, frameworkToken: str, flow_type: int, page: int = 1):
         """获取流水记录"""
@@ -534,14 +577,18 @@ class DeltaForceAPI:
             params["type"] = mode
         if date:
             params["date"] = date
-        return await self.req_get(url="/df/person/daily", params=params)
+        return await self.req_get(url="/df/person/dailyRecord", params=params)
 
-    async def get_weekly_record(self, framework_token: str, mode: str = "", include_teammates: bool = False):
+    async def get_weekly_record(self, framework_token: str, mode: str = "", is_show_null_friend: bool = False, date: str = ""):
         """获取周报数据"""
-        params = {"frameworkToken": framework_token, "includeTeammates": str(include_teammates).lower()}
+        params = {"frameworkToken": framework_token}
         if mode:
             params["type"] = mode
-        return await self.req_get(url="/df/person/weekly", params=params)
+        if is_show_null_friend:
+            params["isShowNullFriend"] = "true"
+        if date:
+            params["date"] = date
+        return await self.req_get(url="/df/person/weeklyRecord", params=params)
 
     # ==================== 特勤处 API ====================
 

@@ -119,7 +119,7 @@ class WeeklyReportPush:
                 return
             
             # 获取周报数据
-            result = await self.api.get_weekly_record(token, "", True)
+            result = await self.api.get_weekly_record(token, "", is_show_null_friend=True)
             
             # 支持两种响应格式: {"success": true} 或 {"code": 0}
             # 同时处理非字典响应（如 HTML 错误页面）
