@@ -251,7 +251,30 @@ class DataHandler(BaseHandler):
                 maps.sort(key=lambda x: x.get('totalCount', 0), reverse=True)
                 final_map_list.append({'baseMapName': base, 'maps': maps})
                 
-            processed_sol['mapList'] = final_map_list
+            # 合并仅包含单张地图的组，减少行数以避免渲染过长
+            merged_map_list = []
+            pending_single_groups = []
+
+            def flush_pending():
+                nonlocal pending_single_groups
+                if len(pending_single_groups) > 1:
+                    merged_maps = []
+                    for group in pending_single_groups:
+                        merged_maps.extend(group.get('maps', []))
+                    merged_map_list.append({'baseMapName': 'merged', 'maps': merged_maps})
+                elif len(pending_single_groups) == 1:
+                    merged_map_list.append(pending_single_groups[0])
+                pending_single_groups = []
+
+            for group in final_map_list:
+                if len(group.get('maps', [])) == 1:
+                    pending_single_groups.append(group)
+                else:
+                    flush_pending()
+                    merged_map_list.append(group)
+            flush_pending()
+
+            processed_sol['mapList'] = merged_map_list
 
             # 处理武器列表
             raw_guns = sol_detail.get('gunPlayList', []) or []
@@ -357,12 +380,14 @@ class DataHandler(BaseHandler):
         }
 
         # 尝试渲染图片
+        fallback_text = self._build_personal_data_text(season, mode, sol_detail, mp_detail)
+
         yield await self.render_and_reply(
             event,
             'personalData/personalData.html',
             render_data,
-            fallback_text=self._build_personal_data_text(season, mode, sol_detail, mp_detail),
-            width=2000
+            fallback_text=fallback_text,
+            width=2400
         )
 
     def _build_personal_data_text(self, season, mode, sol_detail, mp_detail):
