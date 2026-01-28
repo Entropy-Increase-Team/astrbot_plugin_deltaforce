@@ -338,20 +338,8 @@ width=1200,
             music = music_list[num - 1]
             
             # 获取音乐URL
-            music_url = (
-                music.get("url") or 
-                music.get("audioUrl") or 
-                music.get("audio_url") or 
-                music.get("musicUrl") or 
-                music.get("music_url") or 
-                music.get("src") or 
-                music.get("source") or
-                music.get("file") or
-                ""
-            )
-            
-            # 如果没有直接URL，尝试从download字段获取
-            if not music_url and music.get("download"):
+            music_url = ""
+            if music.get("download"):
                 download = music.get("download")
                 if isinstance(download, dict):
                     music_url = download.get("url", "")
@@ -362,17 +350,40 @@ width=1200,
                 yield self.chain_reply(event, "❌ 该音乐暂无可播放链接")
                 return
             
-            # 构建音乐信息
-            title = music.get("title") or music.get("name") or music.get("fileName", "未知歌曲")
-            artist_name = music.get("artist", "未知艺术家")
-            
             # 保存到音乐记忆（用于歌词功能）
             self.save_music_memory(user_id, music)
             
-            yield event.chain_result([
-                Comp.Plain(f"🎵 正在播放第 {num} 首\n{title} - {artist_name}\n"),
-                Comp.Record(file=music_url)
-            ])
+            # 尝试发送音乐卡片
+            title = music.get("fileName") or music.get("title") or music.get("name", "未知歌曲")
+            singer = music.get("artist", "未知艺术家")
+            preview = music.get("metadata", {}).get("cover", "") if music.get("metadata") else ""
+            jump_url = "https://shushu.fan"
+            
+            try:
+                yield event.chain_result([
+                    Comp.Music(
+                        kind="custom",
+                        url=jump_url,
+                        audio=music_url,
+                        title=title,
+                        content=singer,
+                        image=preview
+                    )
+                ])
+            except Exception:
+                # 卡片失败，使用语音备用方案
+                msg_parts = [f"♪ {title} - {singer}"]
+                if music.get("playlist") and isinstance(music["playlist"], dict):
+                    playlist_name = music["playlist"].get("name")
+                    if playlist_name:
+                        msg_parts.append(f"歌单: {playlist_name}")
+                if music.get("metadata") and music["metadata"].get("hot"):
+                    msg_parts.append(f"🔥 {music['metadata']['hot']}")
+                
+                yield event.chain_result([
+                    Comp.Record(file=music_url),
+                    Comp.Plain("\n".join(msg_parts))
+                ])
 
         except Exception as e:
             yield self.chain_reply(event, f"❌ 点歌失败：{e}")
