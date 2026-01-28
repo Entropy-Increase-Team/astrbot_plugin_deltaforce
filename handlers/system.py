@@ -65,11 +65,12 @@ class SystemHandler(BaseHandler):
         right_groups = self._process_groups(help_list.get("right", []))
 
         # Background logic
-        bg_path = Render.RESOURCES_PATH / "help" / "imgs" / "default" / "bg.jpg"
+        resources_path = Render.get_resources_path()
+        bg_path = resources_path / "help" / "imgs" / "default" / "bg.jpg"
         bg_uri = bg_path.as_uri()
         
         # Icon Sprite Logic
-        icon_path = Render.RESOURCES_PATH / "help" / "imgs" / "default" / "icon.png"
+        icon_path = resources_path / "help" / "imgs" / "default" / "icon.png"
         icon_uri = icon_path.as_uri()
 
         style = f"""

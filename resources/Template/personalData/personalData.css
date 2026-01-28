@@ -11,15 +11,16 @@ body {
     color: #fff;
     font-family: 'ProjectD', "Microsoft YaHei", sans-serif;
     margin: 0;
-    width: 2000px;
+    padding: 0;
 }
 
 .container {
+    width: 2000px;
     padding: 60px;
     position: relative;
     min-height: 1200px;
     box-sizing: border-box;
-    overflow: hidden;
+    margin: 0 auto;
 }
 
 /* 背景装饰 */
