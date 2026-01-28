@@ -174,13 +174,28 @@ class MusicHandler(BaseHandler):
             # 处理音乐数据用于渲染
             processed_musics = []
             for i, music in enumerate(page_musics, start + 1):
+                # 获取封面URL
+                cover_url = ""
+                if music.get("metadata") and music["metadata"].get("cover"):
+                    cover_url = music["metadata"]["cover"]
+                
+                # 获取热度
+                hot_value = None
+                if music.get("metadata") and music["metadata"].get("hot"):
+                    hot_value = music["metadata"]["hot"]
+                
+                # 获取歌单名称
+                playlist_name = ""
+                if music.get("playlist") and isinstance(music["playlist"], dict):
+                    playlist_name = music["playlist"].get("name", "")
+                
                 processed_musics.append({
                     'index': i,
-                    'name': music.get("title") or music.get("name", "未知"),
+                    'name': music.get("fileName") or music.get("title") or music.get("name", "未知"),
                     'artist': music.get("artist", "未知"),
-                    'cover': music.get("cover", ""),
-                    'hot': f"{music.get('playCount', 0):,}" if music.get("playCount") else None,
-                    'playlist': music.get("playlist", ""),
+                    'cover': cover_url,
+                    'hot': hot_value,
+                    'playlist': playlist_name,
                 })
 
             render_data = {

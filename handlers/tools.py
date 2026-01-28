@@ -200,14 +200,27 @@ class ToolsHandler(BaseHandler):
             yield self.chain_reply(event, f"未找到与「{query}」相关的物品")
             return
 
-        # 查询价格
+        # 查询价格 - 传入逗号分隔的ID字符串
         result = await self.api.get_current_price(",".join(object_ids))
         
         if not self.is_success(result):
             yield self.chain_reply(event, f"查询价格失败：{self.get_error_msg(result)}")
             return
 
-        price_data = result.get("data", {})
+        # API返回格式: {data: {prices: [{objectID, avgPrice, ...}]}}
+        data = result.get("data", {})
+        prices_list = data.get("prices", [])
+        
+        if not prices_list:
+            yield self.chain_reply(event, "未获取到价格数据")
+            return
+        
+        # 创建ID到价格的映射
+        price_map = {}
+        for price_item in prices_list:
+            obj_id = str(price_item.get("objectID", ""))
+            if obj_id:
+                price_map[obj_id] = price_item
         
         output_lines = [f"💰【价格查询】「{query}」"]
         output_lines.append("━━━━━━━━━━━━━━━")
@@ -216,25 +229,12 @@ class ToolsHandler(BaseHandler):
             object_id = str(item.get("objectID", ""))
             name = item.get("name", item.get("objectName", "未知"))
             
-            item_price = price_data.get(object_id, {})
-            if isinstance(item_price, dict):
-                avg_price = item_price.get("avgPrice", item_price.get("price", "-"))
-                min_price = item_price.get("minPrice", "-")
-                max_price = item_price.get("maxPrice", "-")
-                update_time = item_price.get("updateTime", "")
-            else:
-                avg_price = item_price if item_price else "-"
-                min_price = "-"
-                max_price = "-"
-                update_time = ""
-
+            item_price = price_map.get(object_id, {})
+            avg_price = item_price.get("avgPrice", "-")
+            
             output_lines.append(f"")
             output_lines.append(f"📦 {name}")
             output_lines.append(f"  均价: {self.format_price(avg_price)}")
-            if min_price != "-" and max_price != "-":
-                output_lines.append(f"  最低: {self.format_price(min_price)} | 最高: {self.format_price(max_price)}")
-            if update_time:
-                output_lines.append(f"  更新: {update_time}")
 
         yield self.chain_reply(event, "\n".join(output_lines))
 

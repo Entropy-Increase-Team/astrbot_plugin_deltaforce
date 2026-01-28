@@ -80,22 +80,30 @@ class EntertainmentHandler(BaseHandler):
                 yield self.chain_reply(event, f"❌ 获取失败：{self.get_error_msg(result)}")
                 return
 
-            presets = result.get("data", [])
+            data = result.get("data", [])
+            # 确保data是列表
+            if isinstance(data, dict):
+                presets = data.get("presets", [])
+            else:
+                presets = data if isinstance(data, list) else []
+            
             if not presets:
                 yield self.chain_reply(event, "📭 暂无可用的TTS角色预设")
                 return
 
             lines = ["🎭【TTS角色预设列表】", "━━━━━━━━━━━━━━━━━━━━"]
             
-            for i, preset in enumerate(presets[:20], 1):  # 最多显示20个
+            # 确保presets是可迭代的列表
+            preset_list = list(presets) if presets else []
+            for i, preset in enumerate(preset_list[:20], 1):  # 最多显示20个
                 name = preset.get("name", "未知")
                 char_id = preset.get("characterId", preset.get("id", ""))
                 emotions = preset.get("emotions", [])
                 emotion_str = f"（{len(emotions)}种情感）" if emotions else ""
                 lines.append(f"{i}. {name} [{char_id}] {emotion_str}")
 
-            if len(presets) > 20:
-                lines.append(f"... 等共 {len(presets)} 个角色")
+            if len(preset_list) > 20:
+                lines.append(f"... 等共 {len(preset_list)} 个角色")
 
             lines.append("")
             lines.append("💡 使用 /三角洲 tts角色详情 <角色ID> 查看详情")
