@@ -68,7 +68,7 @@ class MusicHandler(BaseHandler):
         return memory
 
     async def send_music(self, event: AstrMessageEvent, args: str = ""):
-        """发送鼠鼠音乐"""
+        """发送鼠鼠音乐（优先音乐卡片，失败则语音）"""
         try:
             # 解析参数
             artist = ""
@@ -76,9 +76,7 @@ class MusicHandler(BaseHandler):
             playlist = ""
             
             if args:
-                # 简单解析：可能是艺术家、歌曲名或歌单
                 args = args.strip()
-                # 这里简化处理，直接当作搜索词
                 name = args
 
             result = await self.api.get_shushu_music(artist=artist, name=name, playlist=playlist)
@@ -88,7 +86,6 @@ class MusicHandler(BaseHandler):
                 return
 
             data = result.get("data", {})
-            # 处理 data 可能是列表或字典的情况
             if isinstance(data, list):
                 musics = data
             else:
@@ -99,7 +96,7 @@ class MusicHandler(BaseHandler):
 
             music = musics[0]
             
-            # 获取音乐URL（从download字段）
+            # 获取音乐URL
             music_url = ""
             if music.get("download"):
                 download = music.get("download")
@@ -112,18 +109,41 @@ class MusicHandler(BaseHandler):
                 yield self.chain_reply(event, f"❌ 音乐URL为空")
                 return
 
-            # 构建音乐信息
-            title = music.get("fileName") or music.get("title") or music.get("name", "未知歌曲")
-            artist_name = music.get("artist", "未知艺术家")
-            
             # 保存到音乐记忆
             user_id = event.get_sender_id()
             self.save_music_memory(user_id, music)
             
-            yield event.chain_result([
-                Comp.Plain(f"🎵 {title}\n🎤 {artist_name}\n"),
-                Comp.Record(file=music_url)
-            ])
+            # 尝试发送音乐卡片
+            title = music.get("fileName") or music.get("title") or music.get("name", "未知歌曲")
+            singer = music.get("artist", "未知艺术家")
+            preview = music.get("metadata", {}).get("cover", "") if music.get("metadata") else ""
+            jump_url = "https://shushu.fan"
+            
+            try:
+                yield event.chain_result([
+                    Comp.Music(
+                        kind="custom",
+                        url=jump_url,
+                        audio=music_url,
+                        title=title,
+                        content=singer,
+                        image=preview
+                    )
+                ])
+            except Exception:
+                # 卡片失败，使用语音备用方案
+                msg_parts = [f"♪ {title} - {singer}"]
+                if music.get("playlist") and isinstance(music["playlist"], dict):
+                    playlist_name = music["playlist"].get("name")
+                    if playlist_name:
+                        msg_parts.append(f"歌单: {playlist_name}")
+                if music.get("metadata") and music["metadata"].get("hot"):
+                    msg_parts.append(f"🔥 {music['metadata']['hot']}")
+                
+                yield event.chain_result([
+                    Comp.Record(file=music_url),
+                    Comp.Plain("\n".join(msg_parts))
+                ])
 
         except Exception as e:
             yield self.chain_reply(event, f"❌ 发送音乐失败：{e}")

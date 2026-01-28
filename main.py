@@ -583,7 +583,7 @@ class DeltaForce(Star):
         async for result in self.music_handler.get_playlist(event, args):
             yield result
 
-    @filter.command("三角洲点歌", alias={"洲点歌", "三角洲听", "三角洲播放"})
+    @filter.command("三角洲点歌", alias={"洲点歌", "三角洲听", "三角洲播放", "点歌"})
     async def select_music_by_number(self, event: AstrMessageEvent, number: str = ""):
         """点歌 - 通过序号选择音乐"""
         async for result in self.music_handler.select_music_by_number(event, number):
