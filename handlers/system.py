@@ -65,7 +65,8 @@ class SystemHandler(BaseHandler):
         right_groups = self._process_groups(help_list.get("right", []))
 
         # Background logic
-        resources_path = Render.get_resources_path()
+        from pathlib import Path
+        resources_path = Render.get_resources_dir()
         bg_path = resources_path / "help" / "imgs" / "default" / "bg.jpg"
         bg_uri = bg_path.as_uri()
         
