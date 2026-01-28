@@ -106,7 +106,10 @@ class SolutionHandler(BaseHandler):
                 yield self.chain_reply(event, f"❌ 获取列表失败：{self.get_error_msg(result)}")
                 return
 
-            solutions = result.get("data", {}).get("solutions", [])
+            # API返回的是列表，不是包含solutions的对象
+            solutions = result.get("data", [])
+            if isinstance(solutions, dict):
+                solutions = solutions.get("solutions", [])
             if not solutions:
                 yield self.chain_reply(event, "📭 暂无改枪方案")
                 return

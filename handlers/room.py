@@ -35,7 +35,10 @@ class RoomHandler(BaseHandler):
                 yield self.chain_reply(event, f"❌ 获取房间列表失败：{self.get_error_msg(result)}")
                 return
 
-            rooms = result.get("data", {}).get("rooms", [])
+            # API返回的是列表，不是包含rooms的对象
+            rooms = result.get("data", [])
+            if isinstance(rooms, dict):
+                rooms = rooms.get("rooms", [])
             if not rooms:
                 yield self.chain_reply(event, "📭 暂无可用房间")
                 return
@@ -172,7 +175,7 @@ class RoomHandler(BaseHandler):
         except Exception as e:
             yield self.chain_reply(event, f"❌ 退出房间失败：{e}")
 
-    async def get_room_info(self, event: AstrMessageEvent):
+    async def get_room_info(self, event: AstrMessageEvent, room_id: str = ""):
         """获取当前房间信息"""
         token, error = await self.get_active_token(event)
         if error:
@@ -180,7 +183,7 @@ class RoomHandler(BaseHandler):
             return
 
         try:
-            result = await self.api.get_room_info(token)
+            result = await self.api.get_room_info(token, room_id) if room_id else await self.api.get_room_info(token)
             
             if not self.is_success(result):
                 yield self.chain_reply(event, f"❌ 获取房间信息失败：{self.get_error_msg(result)}")
@@ -294,4 +297,3 @@ class RoomHandler(BaseHandler):
 
         except Exception as e:
             yield self.chain_reply(event, f"❌ 获取地图列表失败：{e}")
-

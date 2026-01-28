@@ -314,7 +314,7 @@ class InfoHandler(BaseHandler):
         
         yield self.chain_reply(event, "\n".join(output_lines))
 
-    async def get_operator_list(self, event: AstrMessageEvent):
+    async def get_operator_list(self, event: AstrMessageEvent, args: str = ""):
         """干员列表查询"""
         result = await self.api.get_operators()
         if not self.is_success(result):

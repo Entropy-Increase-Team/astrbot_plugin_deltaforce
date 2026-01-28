@@ -43,7 +43,6 @@ class ToolsHandler(BaseHandler):
                         if keywords:
                             items_info.extend(keywords)
                         else:
-                            # 如果搜索失败，创建默认项
                             items_info.append({
                                 "objectID": single_query,
                                 "objectName": f"物品ID: {single_query}"
