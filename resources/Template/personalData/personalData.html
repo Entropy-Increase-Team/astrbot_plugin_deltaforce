@@ -149,36 +149,34 @@
             </div>
         </div>
         {% endif %}
+        {% if solDetail and solDetail.mapList %}
         <div class="map-list">
-            {% if solDetail and solDetail.mapList %}
-                {% for group in solDetail.mapList %}
-                <div class="map-row">
-                    {% for map in group.maps %}
-                    <div class="map-card">
-                        <img src="{{ map.mapImage }}" class="map-bg" alt="{{ map.mapName }}" onerror="this.style.display='none';" />
-                        <div class="map-content">
-                            <div class="map-name">{{ map.mapName }}</div>
-                            <div class="map-stats">对局: {{ map.totalCount }} | 撤离: {{ map.leaveCount }}</div>
-                        </div>
+            {% for group in solDetail.mapList %}
+                {% for map in group.maps %}
+                <div class="map-card">
+                    <img src="{{ map.mapImage }}" class="map-bg" alt="{{ map.mapName }}" onerror="this.style.display='none';" />
+                    <div class="map-content">
+                        <div class="map-name">{{ map.mapName }}</div>
+                        <div class="map-stats">对局: {{ map.totalCount }} | 撤离: {{ map.leaveCount }}</div>
                     </div>
-                    {% endfor %}
                 </div>
                 {% endfor %}
-            {% endif %}
-            {% if mpDetail and mpDetail.mapList %}
-                <div class="map-list-mp">
-                    {% for map in mpDetail.mapList %}
-                    <div class="map-card">
-                        <img src="{{ map.mapImage }}" class="map-bg" alt="{{ map.mapName }}" onerror="this.style.display='none';" />
-                        <div class="map-content">
-                            <div class="map-name">{{ map.mapName }}</div>
-                            <div class="map-stats">对局: {{ map.totalCount }} | 胜利: {{ map.leaveCount }}</div>
-                        </div>
-                    </div>
-                    {% endfor %}
-                </div>
-            {% endif %}
+            {% endfor %}
         </div>
+        {% endif %}
+        {% if mpDetail and mpDetail.mapList %}
+        <div class="map-list-mp">
+            {% for map in mpDetail.mapList %}
+            <div class="map-card">
+                <img src="{{ map.mapImage }}" class="map-bg" alt="{{ map.mapName }}" onerror="this.style.display='none';" />
+                <div class="map-content">
+                    <div class="map-name">{{ map.mapName }}</div>
+                    <div class="map-stats">对局: {{ map.totalCount }} | 胜利: {{ map.leaveCount }}</div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
     </div>
 
     <!-- 武器登记 (仅烽火地带) -->
@@ -243,4 +241,3 @@
     </div>
 </div>
 {% endblock %}
-

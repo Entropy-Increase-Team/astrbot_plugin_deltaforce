@@ -160,20 +160,18 @@ body {
 
 /* 地图卡片 */
 .map-list { 
-    display: flex;
-    flex-direction: column;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
     gap: 20px; 
 }
 
 .map-list-mp {
     display: grid;
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(3, 1fr);
     gap: 20px;
 }
 .map-row {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
-    gap: 20px;
+    display: contents;
 }
 .map-card {
     position: relative; height: 220px; border-radius: 8px; overflow: hidden;
