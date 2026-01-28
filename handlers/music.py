@@ -98,27 +98,27 @@ class MusicHandler(BaseHandler):
                 return
 
             music = musics[0]
-            # 支持多种可能的URL字段名
-            music_url = (
-                music.get("url") or 
-                music.get("audioUrl") or 
-                music.get("audio_url") or 
-                music.get("musicUrl") or 
-                music.get("music_url") or 
-                music.get("src") or 
-                music.get("source") or
-                music.get("file") or
-                ""
-            )
+            
+            # 获取音乐URL（从download字段）
+            music_url = ""
+            if music.get("download"):
+                download = music.get("download")
+                if isinstance(download, dict):
+                    music_url = download.get("url", "")
+                elif isinstance(download, str):
+                    music_url = download
+            
             if not music_url:
-                # 调试信息：显示返回的字段
-                available_keys = list(music.keys()) if isinstance(music, dict) else []
-                yield self.chain_reply(event, f"❌ 音乐URL为空\n可用字段: {', '.join(available_keys[:10])}")
+                yield self.chain_reply(event, f"❌ 音乐URL为空")
                 return
 
             # 构建音乐信息
-            title = music.get("title") or music.get("name", "未知歌曲")
+            title = music.get("fileName") or music.get("title") or music.get("name", "未知歌曲")
             artist_name = music.get("artist", "未知艺术家")
+            
+            # 保存到音乐记忆
+            user_id = event.get_sender_id()
+            self.save_music_memory(user_id, music)
             
             yield event.chain_result([
                 Comp.Plain(f"🎵 {title}\n🎤 {artist_name}\n"),

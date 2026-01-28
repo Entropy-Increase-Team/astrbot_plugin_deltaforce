@@ -467,9 +467,16 @@ class DeltaForceAPI:
 
     async def get_current_price(self, object_ids: str):
         """获取物品当前均价"""
+        import json
+        # API expects JSON array format like ["id1","id2"]
+        if "," in object_ids:
+            ids_list = [id.strip() for id in object_ids.split(",")]
+            id_param = json.dumps(ids_list)
+        else:
+            id_param = json.dumps([object_ids])
         return await self.req_get(
             url="/df/object/price/latest",
-            params={"id": object_ids}
+            params={"id": id_param}
         )
 
     async def get_price_history(self, object_id: str):
