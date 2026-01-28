@@ -212,7 +212,7 @@ class Render:
                 temp_html_path = None
                 try:
                     # 创建临时文件，放在资源目录下以便相对路径正确解析
-                    temp_dir = cls.RESOURCES_PATH
+                    temp_dir = cls.get_resources_dir()
                     temp_html_path = temp_dir / f"_temp_render_{os.getpid()}.html"
                     temp_html_path.write_text(html_content, encoding='utf-8')
                     
@@ -342,7 +342,7 @@ class Render:
         if index is None:
             index = random.randint(1, 7)
         index = max(1, min(7, index))  # 限制范围
-        return (cls.RESOURCES_PATH / f"imgs/background/bg2-{index}.webp").as_uri()
+        return (cls.get_resources_dir() / f"imgs/background/bg2-{index}.webp").as_uri()
     
     @classmethod
     def get_rank_image(cls, rank_name: str, mode: str = 'sol') -> Optional[str]:
@@ -399,7 +399,7 @@ class Render:
             logger.warning(f"[Render] 未找到段位映射: {clean_rank_name} (模式: {mode_key})")
             return None
         
-        return (cls.RESOURCES_PATH / f"imgs/rank/{mode_key}/{rank_code}.webp").as_uri()
+        return (cls.get_resources_dir() / f"imgs/rank/{mode_key}/{rank_code}.webp").as_uri()
 
     @classmethod
     def get_map_image(cls, map_name: str, mode: str = 'sol') -> Optional[str]:
@@ -421,7 +421,7 @@ class Render:
         
         # 尝试直接拼接
         file_name = f"{prefix}-{map_name}.{ext}"
-        file_path = cls.RESOURCES_PATH / f"imgs/map/{file_name}"
+        file_path = cls.get_resources_dir() / f"imgs/map/{file_name}"
         
         if file_path.exists():
             return file_path.as_uri()
