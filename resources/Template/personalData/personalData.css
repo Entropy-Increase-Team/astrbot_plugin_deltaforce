@@ -11,7 +11,7 @@ body {
     color: #fff;
     font-family: 'ProjectD', "Microsoft YaHei", sans-serif;
     margin: 0;
-    width: 2400px; /* 加宽以减少高度 */
+    width: 2000px;
 }
 
 .container {
@@ -20,7 +20,6 @@ body {
     min-height: 1200px;
     box-sizing: border-box;
     overflow: hidden;
-    height: auto;
 }
 
 /* 背景装饰 */
@@ -66,12 +65,12 @@ body {
 
 .dashboard-grid {
     display: grid;
-    grid-template-columns: repeat(5, 1fr);
+    grid-template-columns: repeat(4, 1fr);
     gap: 20px;
 }
 
 .dashboard-grid.mp-grid {
-    grid-template-columns: repeat(6, 1fr);
+    grid-template-columns: repeat(5, 1fr);
 }
 
 .node-value.highlight-green {
@@ -257,7 +256,7 @@ body {
 /* 收藏品列表 */
 .asset-list {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(2, 1fr);
     gap: 15px;
 }
 

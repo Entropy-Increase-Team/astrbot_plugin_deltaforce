@@ -387,7 +387,7 @@ class DataHandler(BaseHandler):
             'personalData/personalData.html',
             render_data,
             fallback_text=fallback_text,
-            width=2400
+            width=2000
         )
 
     def _build_personal_data_text(self, season, mode, sol_detail, mp_detail):
