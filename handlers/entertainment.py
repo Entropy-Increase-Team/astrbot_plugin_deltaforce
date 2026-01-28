@@ -163,28 +163,39 @@ class EntertainmentHandler(BaseHandler):
     async def tts_synthesize(self, event: AstrMessageEvent, args: str = ""):
         """TTS语音合成"""
         if not args:
-            yield self.chain_reply(event, "❌ 请输入要合成的文字\n用法：/三角洲 tts <角色ID> <文字> [情感ID]\n或：/三角洲 tts <文字>（使用默认角色）")
+            yield self.chain_reply(event, "❌ 请输入要合成的文字\n用法：/三角洲 tts <角色ID> <文字> [情感ID]")
             return
 
-        # 解析参数
-        parts = args.strip().split(maxsplit=2)
+        # 严格按空格分隔解析参数
+        words = args.strip().split()
         
-        # 默认值
-        character = "default"
-        text = args
+        # 必须至少有2个词（角色 + 文本）
+        if len(words) < 2:
+            yield self.chain_reply(event, "❌ 格式错误，请使用空格分隔角色和文本\n正确格式：/三角洲 tts <角色> <文字> [情感]")
+            return
+
+        # 第一个词：角色ID或名称
+        character = words[0]
+        
+        # 第二个词开始：检查是否为情感，否则作为文本
         emotion = ""
+        text_start_index = 1
         
-        if len(parts) >= 2:
-            # 第一个参数可能是角色ID
-            first_part = parts[0]
-            # 如果第一个部分看起来像是角色ID（英文或数字组合）
-            if first_part.replace("-", "").replace("_", "").isalnum() and not first_part.isdigit():
-                character = first_part
-                if len(parts) >= 3:
-                    text = parts[1]
-                    emotion = parts[2]
-                else:
-                    text = parts[1]
+        # 如果有3个或以上的词，第二个词可能是情感
+        if len(words) >= 3:
+            # 简单判断：如果第二个词较短且不包含中文标点，可能是情感ID
+            second_word = words[1]
+            if len(second_word) <= 20 and not any(p in second_word for p in ['。', '，', '！', '？', '、']):
+                # 暂时假设是情感，后续由API验证
+                emotion = second_word
+                text_start_index = 2
+        
+        # 剩余部分作为文本
+        text = ' '.join(words[text_start_index:])
+
+        if not text:
+            yield self.chain_reply(event, "❌ 请输入要合成的文本")
+            return
 
         if len(text) > 1000:
             yield self.chain_reply(event, "❌ 文字过长，最多支持1000字符")
