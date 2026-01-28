@@ -24,31 +24,87 @@ except ImportError:
 class Render:
     """渲染工具类"""
     
-    # 插件根目录
-    PLUGIN_ROOT = Path(__file__).parent.parent
-    # 资源目录
-    RESOURCES_PATH = PLUGIN_ROOT / "resources"
-    
-    # 模板目录 (处理大小写问题)
-    TEMPLATE_PATH = RESOURCES_PATH / "Template"
-    if not TEMPLATE_PATH.exists():
-        if (RESOURCES_PATH / "template").exists():
-            TEMPLATE_PATH = RESOURCES_PATH / "template"
-            
-    # 公共资源目录
-    COMMON_PATH = RESOURCES_PATH / "common"
-    
     # Jinja2 环境（类级别单例）
     _env: Optional[Environment] = None
+    _plugin_root: Optional[Path] = None
+    _resources_path: Optional[Path] = None
+    _template_path: Optional[Path] = None
+    
+    @classmethod
+    def _init_paths(cls):
+        """延迟初始化路径，确保在运行时解析"""
+        if cls._plugin_root is None:
+            cls._plugin_root = Path(__file__).parent.parent.resolve()
+            cls._resources_path = cls._plugin_root / "resources"
+            
+            # 模板目录 (处理大小写问题)
+            cls._template_path = cls._resources_path / "Template"
+            if not cls._template_path.exists():
+                # 尝试小写
+                lower_template = cls._resources_path / "template"
+                if lower_template.exists():
+                    cls._template_path = lower_template
+                    
+            logger.info(f"[Render] 插件根目录: {cls._plugin_root}")
+            logger.info(f"[Render] 资源目录: {cls._resources_path}")
+            logger.info(f"[Render] 模板目录: {cls._template_path}")
+            logger.info(f"[Render] 模板目录存在: {cls._template_path.exists()}")
+    
+    @classmethod
+    def get_plugin_root(cls) -> Path:
+        cls._init_paths()
+        return cls._plugin_root
+    
+    @classmethod
+    def get_resources_dir(cls) -> Path:
+        cls._init_paths()
+        return cls._resources_path
+    
+    @classmethod
+    def get_template_dir(cls) -> Path:
+        cls._init_paths()
+        return cls._template_path
+    
+    @classmethod
+    def get_common_dir(cls) -> Path:
+        cls._init_paths()
+        return cls._resources_path / "common"
+    
+    # 兼容旧代码的属性访问
+    @property
+    def PLUGIN_ROOT(self) -> Path:
+        return self.get_plugin_root()
+    
+    @property
+    def RESOURCES_PATH(self) -> Path:
+        return self.get_resources_dir()
+    
+    @property
+    def TEMPLATE_PATH(self) -> Path:
+        return self.get_template_dir()
+    
+    @property
+    def COMMON_PATH(self) -> Path:
+        return self.get_common_dir()
     
     @classmethod
     def get_env(cls) -> Environment:
         """获取 Jinja2 环境实例"""
+        cls._init_paths()
+        
         if cls._env is None:
+            # 确保模板路径存在
+            if not cls._template_path.exists():
+                logger.error(f"[Render] 模板目录不存在: {cls._template_path}")
+                # 列出资源目录内容帮助调试
+                if cls._resources_path.exists():
+                    contents = list(cls._resources_path.iterdir())
+                    logger.error(f"[Render] 资源目录内容: {[c.name for c in contents]}")
+            
             cls._env = Environment(
                 loader=FileSystemLoader([
-                    str(cls.TEMPLATE_PATH),
-                    str(cls.RESOURCES_PATH),
+                    str(cls._template_path),
+                    str(cls._resources_path),
                 ]),
                 autoescape=select_autoescape(['html', 'xml']),
                 # 启用扩展
@@ -56,13 +112,14 @@ class Render:
             )
             # 注意：不要覆盖 Jinja2 内置的 default 过滤器
             # Jinja2 内置的 default(value, default_value='', boolean=False) 已经够用
-            cls._env.globals['_res_path'] = cls.RESOURCES_PATH.as_uri() + '/'
+            cls._env.globals['_res_path'] = cls._resources_path.as_uri() + '/'
         return cls._env
     
     @classmethod
     def get_resources_path(cls) -> str:
         """获取资源目录的文件URI"""
-        return cls.RESOURCES_PATH.as_uri() + '/'
+        cls._init_paths()
+        return cls._resources_path.as_uri() + '/'
     
     @classmethod
     def render_template(
