@@ -460,7 +460,7 @@ class DeltaForceAPI:
         """搜索物品"""
         params = {}
         if keyword:
-            params["keyword"] = keyword
+            params["name"] = keyword  # 修复: API参数应为 name 而非 keyword
         if object_ids:
             params["id"] = object_ids
         return await self.req_get(url="/df/object/search", params=params)

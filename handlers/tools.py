@@ -225,16 +225,34 @@ class ToolsHandler(BaseHandler):
         output_lines = [f"💰【价格查询】「{query}」"]
         output_lines.append("━━━━━━━━━━━━━━━")
 
+        found_valid_item = False
         for item in items_info:
             object_id = str(item.get("objectID", ""))
             name = item.get("name", item.get("objectName", "未知"))
             
-            item_price = price_map.get(object_id, {})
+            item_price = price_map.get(object_id)
+            if not item_price:
+                # 过滤掉没有价格数据的物品（通常是不相关的搜索结果）
+                continue
+
+            found_valid_item = True
             avg_price = item_price.get("avgPrice", "-")
             
             output_lines.append(f"")
             output_lines.append(f"📦 {name}")
             output_lines.append(f"  均价: {self.format_price(avg_price)}")
+
+        if not found_valid_item:
+             # 如果所有物品都没有价格数据（可能是接口问题或物品确实无价），则显示第一个物品的信息，避免无响应
+            if items_info:
+                first_item = items_info[0]
+                object_id = str(first_item.get("objectID", ""))
+                name = first_item.get("name", first_item.get("objectName", "未知"))
+                output_lines.append(f"")
+                output_lines.append(f"📦 {name}")
+                output_lines.append(f"  均价: -")
+            else:
+                 output_lines.append("未找到有效价格数据")
 
         yield self.chain_reply(event, "\n".join(output_lines))
 
