@@ -5,6 +5,7 @@
 import os
 import time
 from typing import Dict, Optional
+from astrbot.api import logger
 from astrbot.api.event import AstrMessageEvent
 import astrbot.api.message_components as Comp
 from .base import BaseHandler
@@ -68,85 +69,171 @@ class MusicHandler(BaseHandler):
         return memory
 
     async def send_music(self, event: AstrMessageEvent, args: str = ""):
-        """发送鼠鼠音乐（优先音乐卡片，失败则语音）"""
+        """发送鼠鼠音乐（语音形式）"""
         try:
-            # 解析参数
-            artist = ""
-            name = ""
-            playlist = ""
-            
             if args:
                 args = args.strip()
-                name = args
 
-            result = await self.api.get_shushu_music(artist=artist, name=name, playlist=playlist)
+            self.logger.info(f"[鼠鼠音乐] 开始获取音乐: {args}")
+            result = await self.api.get_shushu_music(artist="", name=args, playlist="")
             
             if not self.is_success(result):
+                self.logger.error(f"[鼠鼠音乐] API返回失败: {self.get_error_msg(result)}")
                 yield self.chain_reply(event, f"❌ 获取音乐失败：{self.get_error_msg(result)}")
                 return
 
             data = result.get("data", {})
-            if isinstance(data, list):
-                musics = data
-            else:
-                musics = data.get("musics", [])
+            musics = data if isinstance(data, list) else data.get("musics", [])
             if not musics:
+                self.logger.warning(f"[鼠鼠音乐] 未找到音乐: {args}")
                 yield self.chain_reply(event, "未找到符合条件的音乐")
                 return
 
             music = musics[0]
             
             # 获取音乐URL
-            music_url = ""
-            if music.get("download"):
-                download = music.get("download")
-                if isinstance(download, dict):
-                    music_url = download.get("url", "")
-                elif isinstance(download, str):
-                    music_url = download
+            download = music.get("download")
+            music_url = download.get("url", "") if isinstance(download, dict) else (download if isinstance(download, str) else "")
             
             if not music_url:
+                self.logger.error(f"[鼠鼠音乐] 音乐URL为空")
                 yield self.chain_reply(event, f"❌ 音乐URL为空")
                 return
 
             # 保存到音乐记忆
-            user_id = event.get_sender_id()
-            self.save_music_memory(user_id, music)
+            self.save_music_memory(event.get_sender_id(), music)
             
-            # 尝试发送音乐卡片
+            # 构建音乐信息
             title = music.get("fileName") or music.get("title") or music.get("name", "未知歌曲")
             singer = music.get("artist", "未知艺术家")
-            preview = music.get("metadata", {}).get("cover", "") if music.get("metadata") else ""
-            jump_url = "https://shushu.fan"
             
+            # 直接发送语音（音乐卡片被协议层禁止）
+            from astrbot.core.message.message_event_result import MessageChain
+            msg_parts = [f"♪ {title} - {singer}"]
+            if music.get("playlist") and isinstance(music["playlist"], dict):
+                playlist_name = music["playlist"].get("name")
+                if playlist_name:
+                    msg_parts.append(f"歌单: {playlist_name}")
+            if music.get("metadata") and music["metadata"].get("hot"):
+                msg_parts.append(f"🔥 {music['metadata']['hot']}")
+            
+            await event.send(MessageChain([Comp.Plain("\n".join(msg_parts))]))
+
+            # 尝试发送 OneBot 音乐卡片
+            if await self._try_send_music_card(event, music, music_url):
+                return
+
+            self.logger.info("[鼠鼠音乐] 音乐卡片发送未成功，正在回退到语音发送方案...")
+
+            # 如果卡片发送失败（或者不支持），回退到发送语音
+            # 修复：下载音频文件发送，避免 URL 发送出现 retcode=1200
+            file_path = None
             try:
-                yield event.chain_result([
-                    Comp.Music(
-                        kind="custom",
-                        url=jump_url,
-                        audio=music_url,
-                        title=title,
-                        content=singer,
-                        image=preview
-                    )
-                ])
-            except Exception:
-                # 卡片失败，使用语音备用方案
-                msg_parts = [f"♪ {title} - {singer}"]
-                if music.get("playlist") and isinstance(music["playlist"], dict):
-                    playlist_name = music["playlist"].get("name")
-                    if playlist_name:
-                        msg_parts.append(f"歌单: {playlist_name}")
-                if music.get("metadata") and music["metadata"].get("hot"):
-                    msg_parts.append(f"🔥 {music['metadata']['hot']}")
+                self.logger.info(f"[鼠鼠音乐] 开始下载音乐用于语音发送: {title}")
+                import aiohttp
+                import tempfile
                 
-                yield event.chain_result([
-                    Comp.Record(file=music_url),
-                    Comp.Plain("\n".join(msg_parts))
-                ])
+                async with aiohttp.ClientSession() as session:
+                    async with session.get(music_url) as resp:
+                        if resp.status == 200:
+                            data = await resp.read()
+                            # 简单判断后缀
+                            suffix = ".mp3"
+                            if ".m4a" in music_url:
+                                suffix = ".m4a"
+                            elif ".wav" in music_url:
+                                suffix = ".wav"
+                                
+                            fd, file_path = tempfile.mkstemp(suffix=suffix)
+                            os.close(fd)
+                            with open(file_path, "wb") as f:
+                                f.write(data)
+                            self.logger.info(f"[鼠鼠音乐] 音乐下载成功: {file_path}")
+                        else:
+                            self.logger.warning(f"[鼠鼠音乐] 下载音乐失败: status {resp.status}")
+            except Exception as e:
+                self.logger.warning(f"[鼠鼠音乐] 下载音乐异常，尝试直接使用URL发送: {e}")
+            
+            if file_path:
+                try:
+                    await event.send(MessageChain([Comp.Record(file=file_path)]))
+                except Exception as e:
+                    self.logger.error(f"[鼠鼠音乐] 发送本地音乐文件失败: {e}")
+                    # 如果发送本地文件失败，尝试发送 URL
+                    await event.send(MessageChain([Comp.Record(file=music_url)]))
+                finally:
+                    # 清理临时文件
+                    try:
+                        os.remove(file_path)
+                    except:
+                        pass
+            else:
+                self.logger.info("[鼠鼠音乐] 无本地文件，尝试直接发送 URL")
+                await event.send(MessageChain([Comp.Record(file=music_url)]))
+
+            self.logger.info(f"[鼠鼠音乐] 语音发送完成: {title}")
 
         except Exception as e:
+            self.logger.error(f"[鼠鼠音乐] 发送音乐异常: {e}", exc_info=True)
             yield self.chain_reply(event, f"❌ 发送音乐失败：{e}")
+
+    async def _try_send_music_card(self, event: AstrMessageEvent, music: dict, music_url: str) -> bool:
+        """尝试发送 OneBot 音乐卡片"""
+        try:
+            self.logger.info("[鼠鼠音乐] 尝试构造并发送音乐卡片...")
+            bot = getattr(event, "bot", None) 
+            if not bot:
+                self.logger.warning("[鼠鼠音乐] API不支持: 无法获取 bot 对象")
+                return False
+            
+            call_action = getattr(bot, "call_action", None)
+            if not call_action and hasattr(bot, "api"):
+                call_action = getattr(bot.api, "call_action", None)
+            if not call_action:
+                self.logger.warning("[鼠鼠音乐] API不支持: 无法获取 call_action 接口")
+                return False
+
+            title = music.get("fileName") or music.get("title") or "未知歌曲"
+            singer = music.get("artist") or "未知艺术家"
+            cover = music.get("metadata", {}).get("cover", "")
+            jump_url = "https://shushu.fan"
+
+            payload = {
+                "type": "music",
+                "data": {
+                    "type": "custom", 
+                    "url": jump_url,
+                    "audio": music_url,
+                    "title": title,
+                    "image": cover,
+                    "singer": singer
+                }
+            }
+            
+            def parse_id(s):
+                if not s: return 0
+                s = str(s)
+                if ":" in s: return int(s.split(":")[-1])
+                try: return int(s)
+                except: return 0
+
+            uid = parse_id(event.get_sender_id())
+            gid = 0
+            if hasattr(event, "get_group_id") and event.get_group_id():
+                gid = parse_id(event.get_group_id())
+            
+            self.logger.info(f"[鼠鼠音乐] 准备发送卡片 (UID: {uid}, GID: {gid})")
+            
+            if gid: 
+                await call_action("send_group_msg", group_id=gid, message=[payload])
+            else: 
+                await call_action("send_private_msg", user_id=uid, message=[payload])
+            
+            self.logger.info(f"[鼠鼠音乐] 音乐卡片发送请求调用成功")
+            return True
+        except Exception as e:
+            self.logger.warning(f"[鼠鼠音乐] 音乐卡片发送失败，将回退到语音发送: {e}")
+            return False
 
     async def get_music_list(self, event: AstrMessageEvent, args: str = ""):
         """获取音乐列表/排行榜"""
@@ -353,14 +440,17 @@ width=1200,
             # 保存到音乐记忆（用于歌词功能）
             self.save_music_memory(user_id, music)
             
-            # 尝试发送音乐卡片
+            # 构建音乐信息
             title = music.get("fileName") or music.get("title") or music.get("name", "未知歌曲")
             singer = music.get("artist", "未知艺术家")
             preview = music.get("metadata", {}).get("cover", "") if music.get("metadata") else ""
             jump_url = "https://shushu.fan"
             
+            # 先尝试发送音乐卡片
+            from astrbot.core.message.message_event_result import MessageChain
             try:
-                yield event.chain_result([
+                self.logger.info(f"[点歌] 准备发送音乐卡片: {title} - {singer}")
+                await event.send(MessageChain([
                     Comp.Music(
                         kind="custom",
                         url=jump_url,
@@ -369,9 +459,11 @@ width=1200,
                         content=singer,
                         image=preview
                     )
-                ])
-            except Exception:
-                # 卡片失败，使用语音备用方案
+                ]))
+                self.logger.info(f"[点歌] 音乐卡片发送成功: {title}")
+            except Exception as e:
+                # 卡片失败，使用语音备用方案（降低日志级别避免干扰）
+                self.logger.debug(f"[点歌] 音乐卡片不支持，使用语音: {e}")
                 msg_parts = [f"♪ {title} - {singer}"]
                 if music.get("playlist") and isinstance(music["playlist"], dict):
                     playlist_name = music["playlist"].get("name")
@@ -380,10 +472,9 @@ width=1200,
                 if music.get("metadata") and music["metadata"].get("hot"):
                     msg_parts.append(f"🔥 {music['metadata']['hot']}")
                 
-                yield event.chain_result([
-                    Comp.Record(file=music_url),
-                    Comp.Plain("\n".join(msg_parts))
-                ])
+                await event.send(MessageChain([Comp.Plain("\n".join(msg_parts))]))
+                await event.send(MessageChain([Comp.Record(file=music_url)]))
+                self.logger.info(f"[点歌] 语音发送完成: {title}")
 
         except Exception as e:
             yield self.chain_reply(event, f"❌ 点歌失败：{e}")

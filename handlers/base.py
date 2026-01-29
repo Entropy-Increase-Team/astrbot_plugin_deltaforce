@@ -2,6 +2,7 @@
 基础处理器类，包含通用的辅助方法
 """
 from astrbot.api.event import AstrMessageEvent
+from astrbot.api import logger
 import astrbot.api.message_components as Comp
 import urllib.parse
 from typing import Optional, Dict, Any, Union
@@ -14,6 +15,7 @@ class BaseHandler:
     def __init__(self, api, db_manager):
         self.api = api
         self.db_manager = db_manager
+        self.logger = logger
     
     def is_success(self, response) -> bool:
         """判断接口请求是否成功
