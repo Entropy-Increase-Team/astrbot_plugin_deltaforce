@@ -41,11 +41,14 @@ async def test_render():
     
     # 2. 测试路径
     print("\n[2] 检查资源路径...")
-    print(f"    插件根目录: {Render.PLUGIN_ROOT}")
-    print(f"    资源目录: {Render.RESOURCES_PATH}")
-    print(f"    模板目录: {Render.TEMPLATE_PATH}")
+    plugin_root = Render.get_plugin_root()
+    resources_path = Render.get_resources_dir()
+    template_path = Render.get_template_dir()
+    print(f"    插件根目录: {plugin_root}")
+    print(f"    资源目录: {resources_path}")
+    print(f"    模板目录: {template_path}")
     
-    if Render.RESOURCES_PATH.exists():
+    if resources_path.exists():
         print("    ✓ 资源目录存在")
     else:
         print("    ✗ 资源目录不存在!")
@@ -61,7 +64,7 @@ async def test_render():
         "dailyReport/dailyReport.css",
     ]
     for tpl in templates:
-        tpl_path = Render.TEMPLATE_PATH / tpl
+        tpl_path = template_path / tpl
         if tpl_path.exists():
             print(f"    ✓ {tpl}")
         else:
@@ -78,7 +81,7 @@ async def test_render():
         "imgs/rank/sol/3_3.webp",  # 黄金 III
     ]
     for res in resources:
-        res_path = Render.RESOURCES_PATH / res
+        res_path = resources_path / res
         if res_path.exists():
             print(f"    ✓ {res}")
         else:
@@ -128,8 +131,7 @@ async def test_render():
         html = Render.render_template('userInfo/userInfo.html', params)
         print(f"    ✓ HTML 渲染成功 (长度: {len(html)} 字符)")
         
-        # 保存 HTML 用于调试
-        output_html = Render.PLUGIN_ROOT / "test_output.html"
+        output_html = plugin_root / "test_output.html"
         output_html.write_text(html, encoding='utf-8')
         print(f"    ✓ HTML 已保存到: {output_html}")
         
@@ -153,7 +155,7 @@ async def test_render():
         )
         
         if image_bytes:
-            output_img = Render.PLUGIN_ROOT / "test_output.png"
+            output_img = plugin_root / "test_output.png"
             output_img.write_bytes(image_bytes)
             print(f"    ✓ 图片渲染成功 (大小: {len(image_bytes)} 字节)")
             print(f"    ✓ 图片已保存到: {output_img}")

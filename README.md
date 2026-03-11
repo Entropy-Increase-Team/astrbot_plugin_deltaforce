@@ -58,10 +58,10 @@
 - 开启/关闭每日密码推送 (群管理)
 - 开启/关闭日报推送 (个人订阅)
 - 开启/关闭周报推送 (个人订阅)
-- **开启/关闭特勤处推送** ✨ NEW v0.5.0 (制造完成自动通知)
+- 开启/关闭特勤处推送 (制造完成自动通知)
 - 推送状态
 
-### 📣 广播系统 (2个命令) ✨ NEW v0.5.0
+### 📣 广播系统 (2个命令)
 - **广播** (管理员向多群发送消息)
 - **广播历史** (查看广播记录)
 
@@ -76,11 +76,7 @@
 
 ## 推送功能说明
 
-本插件支持定时自动推送功能，需要安装 `apscheduler` 依赖：
-
-```bash
-pip install apscheduler
-```
+推送功能依赖 `apscheduler`（由 AstrBot 宿主提供，无需单独安装）。
 
 ### 推送时间配置
 | 推送类型 | 默认时间 | Cron表达式 |
@@ -113,13 +109,38 @@ pip install apscheduler
 3. 在 AstrBot 配置中添加 `token` 和 `clientid`
 4. 重启 AstrBot
 
+> **注意**：`apscheduler` 和 `aiosqlite` 由 AstrBot 宿主环境提供，无需手动安装。
+
 ## 配置
 
-在 `_conf_schema.json` 中定义了配置项：
-- `token`: API Token (从 df-api.shallow.ink 获取)
-- `clientid`: 客户端ID
+在 AstrBot 管理面板中配置（配置项定义在 `_conf_schema.json`）：
+
+| 配置项 | 说明 | 默认值 |
+|-------|------|-------|
+| `token` | API Token（从 [df.shallow.ink](https://df.shallow.ink/) API管理页获取） | |
+| `clientid` | 后端用户ID（从 [df.shallow.ink](https://df.shallow.ink/) 个人中心获取） | |
+| `api_mode` | API请求模式：`auto`(自动切换) / `default` / `eo` / `esa` | `auto` |
+| `api_timeout` | API请求超时时间（秒） | `30` |
+| `api_retry_count` | API请求失败重试次数 | `3` |
+| `push_daily_keyword_enabled` | 每日密码推送开关 | `false` |
+| `push_daily_keyword_cron` | 每日密码推送 Cron 表达式 | `0 8 * * *` |
+| `push_daily_keyword_groups` | 每日密码推送群号（逗号分隔） | |
+| `push_daily_report_enabled` | 日报推送开关 | `false` |
+| `push_daily_report_cron` | 日报推送 Cron 表达式 | `0 10 * * *` |
+| `push_weekly_report_enabled` | 周报推送开关 | `false` |
+| `push_weekly_report_cron` | 周报推送 Cron 表达式 | `0 10 * * 1` |
+| `push_place_task_enabled` | 特勤处制造完成推送开关 | `true` |
+| `broadcast_admin_users` | 广播管理员用户ID（逗号分隔） | |
+| `broadcast_default_targets` | 广播默认目标群号（逗号分隔） | |
 
 ## 更新日志
+
+### v0.2.0
+- 新增特勤处制造完成推送
+- 新增广播系统（管理员向多群发送消息）
+- 新增 OAuth 授权登录（QQ / 微信）
+- 新增文章列表 / 文章详情
+- 新增大红收藏按赛季查询
 
 ### v0.1.0
 - 初始版本发布

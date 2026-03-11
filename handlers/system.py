@@ -269,15 +269,61 @@ class SystemHandler(BaseHandler):
             elif sub_type_lower in ["全面", "全面战场", "mp"]:
                 subscription_type = "mp"
 
+        sender_id = str(event.get_sender_id())
+        self.logger.info(
+            "战绩订阅身份上下文: sender_id=%s client_id=%s active_account_checked=%s",
+            sender_id,
+            self.api.clientid,
+            bool(token),
+        )
         result = await self.api.subscribe_record(
-            platform_id=str(event.get_sender_id()),
+            platform_id=sender_id,
             client_id=self.api.clientid,
             subscription_type=subscription_type
         )
 
         if self.is_success(result):
             type_names = {"sol": "烽火地带", "mp": "全面战场", "both": "全部模式"}
-            yield self.chain_reply(event, f"✅ 战绩订阅成功！\n订阅类型：{type_names.get(subscription_type, subscription_type)}\n\n战绩将在对局结束后自动推送")
+            verify_result = await self.api.get_record_subscription(
+                platform_id=sender_id,
+                client_id=self.api.clientid
+            )
+            verify_data = verify_result.get("data", {}) if isinstance(verify_result, dict) else {}
+
+            if self.is_success(verify_result) and verify_data and verify_data.get("enabled", False):
+                confirmed_type = verify_data.get("subscriptionType", subscription_type)
+                lines = [
+                    "✅ 战绩订阅成功！",
+                    f"订阅类型：{type_names.get(confirmed_type, confirmed_type)}",
+                    "",
+                    "战绩将在对局结束后自动推送",
+                    "说明：当前插件按机器人用户维度发起订阅，切换游戏账号不会创建新的订阅记录",
+                ]
+                yield self.chain_reply(event, "\n".join(lines))
+                return
+
+            subscribe_meta = result.get("_requestMeta", {}) if isinstance(result, dict) else {}
+            verify_meta = verify_result.get("_requestMeta", {}) if isinstance(verify_result, dict) else {}
+            self.logger.warning(
+                "战绩订阅回查未确认: sender_id=%s client_id=%s requested_type=%s subscribe_meta=%s verify_meta=%s verify_result=%s",
+                sender_id,
+                self.api.clientid,
+                subscription_type,
+                subscribe_meta,
+                verify_meta,
+                verify_result,
+            )
+
+            lines = [
+                "⚠️ 订阅接口已返回成功，但暂时未确认订阅状态已经生效。",
+                f"请求的订阅类型：{type_names.get(subscription_type, subscription_type)}",
+                "",
+                "请稍后再次发送 /三角洲订阅状态 确认。",
+                "说明：当前插件按机器人用户维度发起订阅，切换游戏账号不会创建新的订阅记录。",
+            ]
+            if subscribe_meta.get("baseURL") and verify_meta.get("baseURL") and subscribe_meta.get("baseURL") != verify_meta.get("baseURL"):
+                lines.append("提示：本次订阅与回查命中了不同后端节点，可能存在状态同步延迟。")
+            yield self.chain_reply(event, "\n".join(lines))
         else:
             yield self.chain_reply(event, f"❌ 订阅失败：{self.get_error_msg(result)}")
 
@@ -306,7 +352,10 @@ class SystemHandler(BaseHandler):
 
         data = result.get("data", {})
         if not data or not data.get("enabled", False):
-            yield self.chain_reply(event, "📡 当前未订阅战绩推送\n\n使用 /三角洲 订阅战绩 开启订阅")
+            yield self.chain_reply(
+                event,
+                "📡 当前未订阅战绩推送\n\n使用 /三角洲 订阅战绩 开启订阅\n如果刚刚完成订阅却仍显示未订阅，可能是后端状态同步延迟，请稍后重试。"
+            )
             return
 
         sub_type = data.get("subscriptionType", "both")
@@ -315,7 +364,8 @@ class SystemHandler(BaseHandler):
         lines = [
             "📡【战绩订阅状态】",
             f"状态：✅ 已订阅",
-            f"类型：{type_names.get(sub_type, sub_type)}"
+            f"类型：{type_names.get(sub_type, sub_type)}",
+            "说明：当前插件按机器人用户维度发起订阅，切换游戏账号不会创建新的订阅记录"
         ]
         
         if data.get("createdAt"):
@@ -328,7 +378,7 @@ class SystemHandler(BaseHandler):
         changelog = """📝【三角洲插件更新日志】
 ━━━━━━━━━━━━━━━━━━━━
 
-📦 v0.3.0 (当前版本)
+📦 v0.3.1 (当前版本)
 • 新增物品列表查询功能
 • 新增大红收藏按赛季查询
 • 新增最高利润V2排行功能
@@ -365,7 +415,7 @@ class SystemHandler(BaseHandler):
             "⚙️【插件运行状态】",
             "━━━━━━━━━━━━━━━━━━━━",
             "",
-            f"📦 插件版本: v0.3.0",
+            f"📦 插件版本: v0.3.1",
             f"🐍 Python版本: {sys.version.split()[0]}",
             f"💻 系统平台: {platform.system()} {platform.release()}",
             "",

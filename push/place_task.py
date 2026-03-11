@@ -275,8 +275,7 @@ class PlaceTaskPush:
             )
             
             if success:
-                # 启用推送
-                self._push_config["enabled"] = True
+                self.config["push_place_task_enabled"] = True
                 return True, "✅ 已开启特勤处制造完成推送\n制造完成后将在本群通知您"
             else:
                 return False, "订阅失败，请稍后重试"

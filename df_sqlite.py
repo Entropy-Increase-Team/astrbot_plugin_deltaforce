@@ -61,22 +61,21 @@ class DeltaForceSQLiteManager:
             logger.error(f"数据库初始化失败: {e}")
             return False
     
-    async def upsert_user(self, user: int, selection: int, token: str = None) -> bool:
+    async def upsert_user(self, user: int, selection: int = None, token: str = None) -> bool:
         """
         异步插入或更新用户数据
         使用新的 users 表结构存储
+
+        selection=None 表示保持现有值不变
         """
         try:
             user_id = str(user)
             import time
             current_time = int(time.time())
             
-            # 读取旧数据（如果只是更新selection）
-            # 由于 upsert_user 参数没有包含所有可能的 data 字段，我们需要先读取
-            # 但这里我们主要存储 selection 和 token
-            
-            # 使用 upsert 语法
-            data_dict = {"selection": selection}
+            data_dict = {}
+            if selection is not None:
+                data_dict["selection"] = selection
             if token:
                 data_dict["token"] = token
             
@@ -129,7 +128,8 @@ class DeltaForceSQLiteManager:
                 if row and row[0]:
                     try:
                         data = json.loads(row[0])
-                        selection = data.get("selection", 0)
+                        raw_selection = data.get("selection", 0)
+                        selection = int(raw_selection) if raw_selection is not None else 0
                         token = data.get("token")
                         return (selection, token)
                     except Exception as e:

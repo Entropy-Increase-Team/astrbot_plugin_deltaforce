@@ -734,13 +734,12 @@ class ToolsHandler(BaseHandler):
         yield self.chain_reply(event, "\n".join(output_lines))
 
     async def get_red_collection(self, event: AstrMessageEvent, args: str = ""):
-        """大红收藏查询"""
+        """大红收藏查询（海报渲染版）"""
         token, error = await self.get_active_token(event)
         if error:
             yield self.chain_reply(event, error)
             return
 
-        # 解析赛季参数
         season = ""
         if args:
             args_stripped = args.strip()
@@ -749,45 +748,140 @@ class ToolsHandler(BaseHandler):
 
         yield self.chain_reply(event, "正在查询大红收藏...")
 
-        result = await self.api.get_collection(frameworkToken=token)
-        
+        import asyncio
+        collection_task = self.api.get_collection(frameworkToken=token)
+        info_task = self.api.get_personal_info(frameworkToken=token)
+        result, info_result = await asyncio.gather(collection_task, info_task)
+
         if not self.is_success(result):
             yield self.chain_reply(event, f"查询失败：{self.get_error_msg(result)}")
             return
 
         data = result.get("data", {})
         collections = data.get("collections", data.get("items", []))
-        
+
         if not collections:
             yield self.chain_reply(event, "暂无收藏数据")
             return
 
-        output_lines = ["🔴【大红收藏】"]
-        if season:
-            output_lines[0] += f" 第{season}赛季"
-        output_lines.append("━━━━━━━━━━━━━━━")
-
-        # 筛选大红品质的藏品
         red_items = []
+        other_red_items = []
         for item in collections:
             grade = item.get("grade", "").lower()
             item_season = str(item.get("season", ""))
-            
-            # 筛选红色稀有度
+
             if grade in ["red", "r", "红色", "大红"]:
-                # 如果指定了赛季，则筛选
                 if season and item_season != season:
                     continue
-                red_items.append(item)
+                count = item.get("count", 0)
+                if count and int(count) > 0:
+                    red_items.append(item)
+                else:
+                    other_red_items.append(item)
 
-        if not red_items:
+        if not red_items and not other_red_items:
             msg = "暂无大红藏品"
             if season:
                 msg += f" (第{season}赛季)"
             yield self.chain_reply(event, msg)
             return
 
-        output_lines.append(f"共 {len(red_items)} 件大红藏品")
+        red_god_count = len(red_items)
+        red_total_count = sum(int(item.get("count", 1)) for item in red_items)
+        red_total_value = sum(
+            float(item.get("avgPrice", item.get("price", 0)) or 0) * int(item.get("count", 1))
+            for item in red_items
+        )
+
+        sorted_items = sorted(
+            red_items,
+            key=lambda x: float(x.get("avgPrice", x.get("price", 0)) or 0) * int(x.get("count", 1)),
+            reverse=True
+        )
+
+        top_collections = []
+        for item in sorted_items[:6]:
+            name = item.get("objectName", item.get("name", "未知"))
+            count = item.get("count", 1)
+            price = float(item.get("avgPrice", item.get("price", 0)) or 0)
+            total_value = price * int(count)
+            image_url = item.get("imageUrl", item.get("icon", item.get("image", "")))
+            top_collections.append({
+                "name": name,
+                "count": int(count),
+                "value": self.format_price(total_value),
+                "imageUrl": image_url,
+            })
+
+        unlocked_collections = []
+        sorted_unlocked = sorted(
+            other_red_items,
+            key=lambda x: float(x.get("avgPrice", x.get("price", 0)) or 0),
+            reverse=True
+        )
+        for item in sorted_unlocked[:3]:
+            name = item.get("objectName", item.get("name", "未知"))
+            price = float(item.get("avgPrice", item.get("price", 0)) or 0)
+            image_url = item.get("imageUrl", item.get("icon", item.get("image", "")))
+            unlocked_collections.append({
+                "name": name,
+                "price": self.format_price(price),
+                "imageUrl": image_url,
+            })
+
+        user_name = "指挥官"
+        user_avatar = ""
+        user_rank = ""
+        user_rank_image = ""
+        if self.is_success(info_result):
+            info_data = info_result.get("data", {})
+            user_name = info_data.get("nickName", info_data.get("name", "指挥官"))
+            user_avatar = info_data.get("avatar", info_data.get("headUrl", ""))
+            user_rank = info_data.get("rank", info_data.get("rankName", ""))
+            user_rank_image = info_data.get("rankImage", info_data.get("rankIcon", ""))
+
+        qq_avatar_url = f"https://q1.qlogo.cn/g?b=qq&nk={event.get_sender_id()}&s=640"
+
+        render_data = {
+            "userAvatar": user_avatar or qq_avatar_url,
+            "qqAvatarUrl": qq_avatar_url,
+            "userName": user_name,
+            "userRank": user_rank,
+            "userRankImage": user_rank_image,
+            "seasonDisplay": f"S{season}赛季" if season else "全赛季",
+            "title": "大红收藏馆",
+            "subtitle": f"共收藏 {red_god_count} 种大红藏品",
+            "unlockDesc": f"累计价值 {self.format_price(red_total_value)}，记录您的每一次珍贵收获",
+            "statistics": {
+                "redGodCount": red_god_count,
+                "redTotalCount": red_total_count,
+                "redTotalValue": self.format_price(red_total_value),
+                "unlockedCount": len(other_red_items),
+            },
+            "topCollections": top_collections,
+            "unlockedCollections": unlocked_collections,
+        }
+
+        fallback_text = self._build_red_collection_text(
+            red_items, red_god_count, red_total_count, red_total_value, season
+        )
+
+        yield await self.render_and_reply(
+            event,
+            'redCollection/redCollection.html',
+            render_data,
+            fallback_text=fallback_text,
+            width=1220,
+            height=2320
+        )
+
+    def _build_red_collection_text(self, red_items, red_god_count, red_total_count, red_total_value, season):
+        """构建纯文本大红收藏（渲染失败时的回退）"""
+        output_lines = ["🔴【大红收藏】"]
+        if season:
+            output_lines[0] += f" 第{season}赛季"
+        output_lines.append("━━━━━━━━━━━━━━━")
+        output_lines.append(f"种数: {red_god_count} | 总数: {red_total_count} | 价值: {self.format_price(red_total_value)}")
         output_lines.append("")
 
         for item in red_items[:15]:
@@ -795,14 +889,13 @@ class ToolsHandler(BaseHandler):
             count = item.get("count", 1)
             item_season = item.get("season", "-")
             price = item.get("avgPrice", item.get("price", "-"))
-            
             output_lines.append(f"🔴 {name} x{count}")
             output_lines.append(f"   赛季: S{item_season} | 价格: {self.format_price(price)}")
 
         if len(red_items) > 15:
             output_lines.append(f"\n... 共 {len(red_items)} 件")
 
-        yield self.chain_reply(event, "\n".join(output_lines))
+        return "\n".join(output_lines)
 
     async def get_max_profit(self, event: AstrMessageEvent, args: str = ""):
         """最高利润查询 (V2)"""
@@ -1072,3 +1165,96 @@ class ToolsHandler(BaseHandler):
                 yield event.chain_result(chain)
             except Exception:
                 pass  # 图片加载失败时静默忽略
+
+    # ==================== 官方改枪方案 V1 ====================
+
+    async def get_official_solution_list(self, event: AstrMessageEvent):
+        """官方改枪码列表"""
+        yield self.chain_reply(event, "正在获取官方改枪方案...")
+
+        result = await self.api.get_official_solution_list()
+
+        if not self.is_success(result):
+            yield self.chain_reply(event, f"获取失败：{self.get_error_msg(result)}")
+            return
+
+        data = result.get("data", {})
+        solutions = data.get("list", data.get("solutions", []))
+
+        if not solutions:
+            yield self.chain_reply(event, "暂无官方改枪方案数据")
+            return
+
+        output_lines = ["🔫【官方改枪方案列表】"]
+        output_lines.append("━━━━━━━━━━━━━━━")
+        output_lines.append(f"共 {len(solutions)} 个方案")
+        output_lines.append("")
+
+        for i, sol in enumerate(solutions[:20], 1):
+            sol_id = sol.get("id", "")
+            weapon = sol.get("weaponName", sol.get("weapon", "未知"))
+            title = sol.get("title", sol.get("name", "无标题"))
+            output_lines.append(f"{i}. 【{weapon}】{title}")
+            output_lines.append(f"   ID: {sol_id}")
+
+        if len(solutions) > 20:
+            output_lines.append(f"\n... 共 {len(solutions)} 个方案，仅显示前20个")
+
+        output_lines.append("")
+        output_lines.append("💡 使用 /三角洲 官方改枪码详情 <ID> 查看详情")
+
+        yield self.chain_reply(event, "\n".join(output_lines))
+
+    async def get_official_solution_detail(self, event: AstrMessageEvent, solution_id: str):
+        """官方改枪码详情"""
+        if not solution_id or not solution_id.strip():
+            yield self.chain_reply(event, "请提供方案ID\n示例: /三角洲 官方改枪码详情 sol_001")
+            return
+
+        solution_id = solution_id.strip()
+        yield self.chain_reply(event, f"正在获取方案详情 (ID: {solution_id})...")
+
+        result = await self.api.get_official_solution_detail(solution_id)
+
+        if not self.is_success(result):
+            yield self.chain_reply(event, f"获取失败：{self.get_error_msg(result, '方案不存在')}")
+            return
+
+        data = result.get("data", {})
+        if not data:
+            yield self.chain_reply(event, "方案不存在或已被删除")
+            return
+
+        weapon = data.get("weaponName", data.get("weapon", "未知"))
+        title = data.get("title", data.get("name", "无标题"))
+        code = data.get("solutionCode", data.get("code", ""))
+        desc = data.get("desc", data.get("description", ""))
+        author = data.get("author", "官方")
+        create_time = data.get("createTime", data.get("createdAt", ""))
+
+        output_lines = ["🔫【官方改枪方案详情】"]
+        output_lines.append("━━━━━━━━━━━━━━━")
+        output_lines.append(f"武器: {weapon}")
+        output_lines.append(f"标题: {title}")
+        output_lines.append(f"作者: {author}")
+        if create_time:
+            output_lines.append(f"时间: {create_time}")
+        if desc:
+            output_lines.append(f"描述: {desc}")
+        output_lines.append("")
+        if code:
+            output_lines.append(f"📋 改枪码: {code}")
+
+        accessories = data.get("accessories", data.get("parts", []))
+        if accessories:
+            output_lines.append("")
+            output_lines.append("🔩 配件方案:")
+            for acc in accessories:
+                acc_name = acc.get("name", "未知")
+                acc_type = acc.get("type", acc.get("slot", ""))
+                if acc_type:
+                    output_lines.append(f"  • [{acc_type}] {acc_name}")
+                else:
+                    output_lines.append(f"  • {acc_name}")
+
+        yield self.chain_reply(event, "\n".join(output_lines))

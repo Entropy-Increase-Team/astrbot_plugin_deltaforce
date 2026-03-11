@@ -114,6 +114,7 @@ class DeltaForceAPI:
         self.token = token
         self.clientid = clientid
         self.url_manager = ApiUrlManager(mode=api_mode, timeout=timeout, retry_count=retry_count)
+        self._sticky_base_urls: Dict[str, str] = {}
     
     def set_api_mode(self, mode: str):
         """设置API模式"""
@@ -123,9 +124,88 @@ class DeltaForceAPI:
         """获取API状态信息"""
         return self.url_manager.get_status()
     
+    def _get_available_urls_for_request(self, sticky_key: Optional[str] = None) -> List[str]:
+        """获取本次请求应尝试的地址列表，并优先命中粘性节点。"""
+        available_urls = self.url_manager.get_available_urls()
+
+        if not available_urls:
+            logger.warning("[ApiUrlManager] 所有地址都标记为失败，重置失败记录")
+            self.url_manager.reset_failures()
+            available_urls = self.url_manager.get_available_urls()
+
+        if sticky_key:
+            sticky_url = self._sticky_base_urls.get(sticky_key)
+            if sticky_url in available_urls:
+                return [sticky_url] + [url for url in available_urls if url != sticky_url]
+
+        return available_urls
+
+    def _build_request_meta(
+        self,
+        *,
+        method: str,
+        url: str,
+        base_url: str,
+        attempt: int,
+        request_name: Optional[str] = None,
+        sticky_key: Optional[str] = None,
+        trace_payload: Optional[Dict[str, Any]] = None
+    ) -> Dict[str, Any]:
+        """构造请求元信息，便于上层日志和排查问题。"""
+        meta: Dict[str, Any] = {
+            "method": method.upper(),
+            "path": url,
+            "baseURL": base_url,
+            "attempt": attempt,
+        }
+        if request_name:
+            meta["requestName"] = request_name
+        if sticky_key:
+            meta["stickyKey"] = sticky_key
+        if trace_payload:
+            meta["trace"] = dict(trace_payload)
+        return meta
+
+    def _attach_request_meta(self, result: Any, meta: Dict[str, Any]) -> Any:
+        """将请求元信息附加到响应中，避免影响现有调用方。"""
+        if not isinstance(result, dict):
+            return result
+        response = dict(result)
+        response["_requestMeta"] = meta
+        return response
+
+    def _log_traced_request(
+        self,
+        *,
+        level: int,
+        request_name: Optional[str],
+        message: str,
+        base_url: str,
+        sticky_key: Optional[str],
+        trace_payload: Optional[Dict[str, Any]],
+        extra: str = ""
+    ) -> None:
+        """仅对需要追踪的请求输出结构化日志。"""
+        if not request_name:
+            return
+
+        payload_repr = trace_payload if trace_payload else {}
+        suffix = f" {extra}" if extra else ""
+        logger.log(
+            level,
+            "[DeltaForceAPI] %s via=%s sticky=%s payload=%s%s",
+            f"{request_name} {message}",
+            base_url,
+            sticky_key or "-",
+            payload_repr,
+            suffix,
+        )
+
     async def _make_request(self, method: str, url: str, params: Optional[Dict] = None,
                             json_data: Optional[Dict] = None, form_data: Optional[Dict] = None,
-                            auth: bool = True) -> Dict:
+                            auth: bool = True, request_name: Optional[str] = None,
+                            sticky_key: Optional[str] = None,
+                            trace_payload: Optional[Dict[str, Any]] = None) -> Dict:
         """
         统一的请求方法，支持自动重试和故障转移
         
@@ -144,17 +224,10 @@ class DeltaForceAPI:
         if auth and self.token:
             headers["Authorization"] = f"Bearer {self.token}"
         
-        # 获取可用地址列表
-        available_urls = self.url_manager.get_available_urls()
-        
-        # 如果没有可用地址，重置失败记录并重新获取
-        if not available_urls:
-            logger.warning("[ApiUrlManager] 所有地址都标记为失败，重置失败记录")
-            self.url_manager.reset_failures()
-            available_urls = self.url_manager.get_available_urls()
-        
+        available_urls = self._get_available_urls_for_request(sticky_key=sticky_key)
         last_error = None
         last_result = None
+        last_meta = None
         
         # 遍历所有可用地址
         for base_url in available_urls:
@@ -168,47 +241,145 @@ class DeltaForceAPI:
                         if method.upper() == "GET":
                             async with session.get(full_url, headers=headers, params=params) as response:
                                 result = await self._handle_response(response)
+                                meta = self._build_request_meta(
+                                    method=method,
+                                    url=url,
+                                    base_url=base_url,
+                                    attempt=attempt,
+                                    request_name=request_name,
+                                    sticky_key=sticky_key,
+                                    trace_payload=trace_payload,
+                                )
+                                last_meta = meta
                                 # 请求成功（业务成功）
-                                if result.get("code") == 200 or result.get("code") == 0:
+                                if result.get("code") == 200 or result.get("code") == 0 or result.get("success") is True:
+                                    previous_base_url = self._sticky_base_urls.get(sticky_key) if sticky_key else None
+                                    if sticky_key:
+                                        self._sticky_base_urls[sticky_key] = base_url
                                     logger.debug(f"[ApiUrlManager] 请求成功: {base_url}")
-                                    return result
+                                    switch_note = ""
+                                    if previous_base_url and previous_base_url != base_url:
+                                        switch_note = f" previousSticky={previous_base_url}"
+                                    self._log_traced_request(
+                                        level=logging.INFO,
+                                        request_name=request_name,
+                                        message="success",
+                                        base_url=base_url,
+                                        sticky_key=sticky_key,
+                                        trace_payload=trace_payload,
+                                        extra=switch_note,
+                                    )
+                                    return self._attach_request_meta(result, meta)
                                 # 5xx服务器错误，应该重试和切换地址
                                 status_code = result.get("code", 0)
                                 if 500 <= status_code < 600:
                                     last_error = f"服务器错误 ({status_code})"
-                                    last_result = result
+                                    last_result = self._attach_request_meta(result, meta)
+                                    self._log_traced_request(
+                                        level=logging.WARNING,
+                                        request_name=request_name,
+                                        message=f"server_error code={status_code}",
+                                        base_url=base_url,
+                                        sticky_key=sticky_key,
+                                        trace_payload=trace_payload,
+                                    )
                                     logger.warning(f"[ApiUrlManager] 地址 {base_url} 第 {attempt} 次请求返回 {status_code}")
                                     # 继续重试，不直接返回
                                     raise ServerError(status_code, result.get("msg", "服务器错误"))
                                 # 其他非5xx错误（如400、401、403、404等），直接返回，不重试
-                                return result
+                                self._log_traced_request(
+                                    level=logging.WARNING,
+                                    request_name=request_name,
+                                    message=f"failed code={status_code}",
+                                    base_url=base_url,
+                                    sticky_key=sticky_key,
+                                    trace_payload=trace_payload,
+                                )
+                                return self._attach_request_meta(result, meta)
                         else:  # POST
                             async with session.post(full_url, headers=headers, 
                                                    json=json_data, data=form_data) as response:
                                 result = await self._handle_response(response)
+                                meta = self._build_request_meta(
+                                    method=method,
+                                    url=url,
+                                    base_url=base_url,
+                                    attempt=attempt,
+                                    request_name=request_name,
+                                    sticky_key=sticky_key,
+                                    trace_payload=trace_payload,
+                                )
+                                last_meta = meta
                                 # 请求成功（业务成功）
-                                if result.get("code") == 200 or result.get("code") == 0:
+                                if result.get("code") == 200 or result.get("code") == 0 or result.get("success") is True:
+                                    previous_base_url = self._sticky_base_urls.get(sticky_key) if sticky_key else None
+                                    if sticky_key:
+                                        self._sticky_base_urls[sticky_key] = base_url
                                     logger.debug(f"[ApiUrlManager] 请求成功: {base_url}")
-                                    return result
+                                    switch_note = ""
+                                    if previous_base_url and previous_base_url != base_url:
+                                        switch_note = f" previousSticky={previous_base_url}"
+                                    self._log_traced_request(
+                                        level=logging.INFO,
+                                        request_name=request_name,
+                                        message="success",
+                                        base_url=base_url,
+                                        sticky_key=sticky_key,
+                                        trace_payload=trace_payload,
+                                        extra=switch_note,
+                                    )
+                                    return self._attach_request_meta(result, meta)
                                 # 5xx服务器错误，应该重试和切换地址
                                 status_code = result.get("code", 0)
                                 if 500 <= status_code < 600:
                                     last_error = f"服务器错误 ({status_code})"
-                                    last_result = result
+                                    last_result = self._attach_request_meta(result, meta)
+                                    self._log_traced_request(
+                                        level=logging.WARNING,
+                                        request_name=request_name,
+                                        message=f"server_error code={status_code}",
+                                        base_url=base_url,
+                                        sticky_key=sticky_key,
+                                        trace_payload=trace_payload,
+                                    )
                                     logger.warning(f"[ApiUrlManager] 地址 {base_url} 第 {attempt} 次请求返回 {status_code}")
                                     # 继续重试，不直接返回
                                     raise ServerError(status_code, result.get("msg", "服务器错误"))
                                 # 其他非5xx错误（如400、401、403、404等），直接返回，不重试
-                                return result
+                                self._log_traced_request(
+                                    level=logging.WARNING,
+                                    request_name=request_name,
+                                    message=f"failed code={status_code}",
+                                    base_url=base_url,
+                                    sticky_key=sticky_key,
+                                    trace_payload=trace_payload,
+                                )
+                                return self._attach_request_meta(result, meta)
                 
                 except ServerError as e:
                     last_error = str(e)
                     # ServerError表示5xx错误，继续重试逻辑
                 except asyncio.TimeoutError:
                     last_error = f"请求超时 ({self.url_manager.timeout}s)"
+                    self._log_traced_request(
+                        level=logging.WARNING,
+                        request_name=request_name,
+                        message="timeout",
+                        base_url=base_url,
+                        sticky_key=sticky_key,
+                        trace_payload=trace_payload,
+                    )
                     logger.warning(f"[ApiUrlManager] 地址 {base_url} 第 {attempt} 次请求超时")
                 except aiohttp.ClientError as e:
                     last_error = str(e)
+                    self._log_traced_request(
+                        level=logging.WARNING,
+                        request_name=request_name,
+                        message=f"client_error error={e}",
+                        base_url=base_url,
+                        sticky_key=sticky_key,
+                        trace_payload=trace_payload,
+                    )
                     logger.warning(f"[ApiUrlManager] 地址 {base_url} 第 {attempt} 次请求失败: {e}")
                 except Exception as e:
                     # 避免捕获ServerError以外的自定义异常
@@ -216,6 +387,14 @@ class DeltaForceAPI:
                         last_error = str(e)
                     else:
                         last_error = str(e)
+                        self._log_traced_request(
+                            level=logging.WARNING,
+                            request_name=request_name,
+                            message=f"exception error={e}",
+                            base_url=base_url,
+                            sticky_key=sticky_key,
+                            trace_payload=trace_payload,
+                        )
                         logger.warning(f"[ApiUrlManager] 地址 {base_url} 第 {attempt} 次请求异常: {e}")
                 
                 # 如果不是最后一次重试，等待后继续
@@ -230,11 +409,14 @@ class DeltaForceAPI:
         # 所有地址都失败
         if last_result:
             return last_result
-        return {"code": -1, "msg": f"所有 API 地址都请求失败: {last_error}", "data": None}
+        result = {"code": -1, "msg": f"所有 API 地址都请求失败: {last_error}", "data": None}
+        if last_meta:
+            result = self._attach_request_meta(result, last_meta)
+        return result
     
     async def _handle_response(self, response: aiohttp.ClientResponse) -> Dict:
         """处理响应"""
-        if response.status != 200:
+        if response.status >= 300:
             text = await response.text()
             if "<html" in text.lower() or "<!doctype" in text.lower():
                 error_msg = f"服务器错误 ({response.status})"
@@ -243,7 +425,7 @@ class DeltaForceAPI:
             return {"code": response.status, "msg": error_msg, "data": None}
         
         try:
-            return await response.json()
+            return await response.json(content_type=None)
         except (aiohttp.ContentTypeError, json.JSONDecodeError):
             text = await response.text()
             if "<html" in text.lower() or "<!doctype" in text.lower():
@@ -252,13 +434,35 @@ class DeltaForceAPI:
                 error_msg = f"响应格式错误: {text[:100]}"
             return {"code": response.status, "msg": error_msg, "data": None}
     
-    async def req_get(self, url: str, params: Optional[Dict] = None, auth: bool = True) -> Dict:
+    async def req_get(self, url: str, params: Optional[Dict] = None, auth: bool = True,
+                      request_name: Optional[str] = None, sticky_key: Optional[str] = None,
+                      trace_payload: Optional[Dict[str, Any]] = None) -> Dict:
         """GET 请求"""
-        return await self._make_request("GET", url, params=params, auth=auth)
+        return await self._make_request(
+            "GET",
+            url,
+            params=params,
+            auth=auth,
+            request_name=request_name,
+            sticky_key=sticky_key,
+            trace_payload=trace_payload,
+        )
     
-    async def req_post(self, url: str, json: Optional[Dict] = None, data: Optional[Dict] = None, auth: bool = True) -> Dict:
+    async def req_post(self, url: str, json: Optional[Dict] = None, data: Optional[Dict] = None,
+                       auth: bool = True, request_name: Optional[str] = None,
+                       sticky_key: Optional[str] = None,
+                       trace_payload: Optional[Dict[str, Any]] = None) -> Dict:
         """POST 请求"""
-        return await self._make_request("POST", url, json_data=json, form_data=data, auth=auth)
+        return await self._make_request(
+            "POST",
+            url,
+            json_data=json,
+            form_data=data,
+            auth=auth,
+            request_name=request_name,
+            sticky_key=sticky_key,
+            trace_payload=trace_payload,
+        )
 
     ################################################################
     async def user_bind(self, platformId:str, frameworkToken:str):
@@ -366,6 +570,13 @@ class DeltaForceAPI:
             params = {
                 "frameworkToken": frameworkToken
             }
+        )
+
+    async def wegame_claim_gift(self, framework_token: str):
+        """WeGame 每日领奖"""
+        return await self.req_get(
+            url="/df/wegame/wechat/gift",
+            params={"frameworkToken": framework_token}
         )
     ################################################################
 
@@ -504,33 +715,48 @@ class DeltaForceAPI:
 
     async def subscribe_record(self, platform_id: str, client_id: str, subscription_type: str = "both"):
         """订阅战绩"""
+        sticky_key = f"record_subscription:{platform_id}:{client_id}"
+        payload = {
+            "platformID": platform_id,
+            "clientID": client_id,
+            "subscriptionType": subscription_type,
+        }
         return await self.req_post(
             url="/df/record/subscribe",
-            json={
-                "platformID": platform_id,
-                "clientID": client_id,
-                "subscriptionType": subscription_type
-            }
+            json=payload,
+            request_name="record.subscribe",
+            sticky_key=sticky_key,
+            trace_payload=payload,
         )
 
     async def unsubscribe_record(self, platform_id: str, client_id: str):
         """取消订阅战绩"""
+        sticky_key = f"record_subscription:{platform_id}:{client_id}"
+        payload = {
+            "platformID": platform_id,
+            "clientID": client_id,
+        }
         return await self.req_post(
             url="/df/record/unsubscribe",
-            json={
-                "platformID": platform_id,
-                "clientID": client_id
-            }
+            json=payload,
+            request_name="record.unsubscribe",
+            sticky_key=sticky_key,
+            trace_payload=payload,
         )
 
     async def get_record_subscription(self, platform_id: str, client_id: str):
         """查询战绩订阅状态"""
+        sticky_key = f"record_subscription:{platform_id}:{client_id}"
+        payload = {
+            "platformID": platform_id,
+            "clientID": client_id,
+        }
         return await self.req_get(
             url="/df/record/subscription",
-            params={
-                "platformID": platform_id,
-                "clientID": client_id
-            }
+            params=payload,
+            request_name="record.subscription",
+            sticky_key=sticky_key,
+            trace_payload=payload,
         )
 
     # ==================== TTS语音 API ====================
@@ -781,6 +1007,19 @@ class DeltaForceAPI:
         if place:
             params["place"] = place
         return await self.req_get(url="/df/place/profitRank/v2", params=params)
+
+    # ==================== 官方改枪方案 V1 API ====================
+
+    async def get_official_solution_list(self):
+        """获取官方改枪方案列表（V1）"""
+        return await self.req_get(url="/df/tools/solution/list")
+
+    async def get_official_solution_detail(self, solution_id: str):
+        """获取官方改枪方案详情（V1）"""
+        return await self.req_get(
+            url="/df/tools/solution/detail",
+            params={"id": solution_id}
+        )
 
     # ==================== 改枪方案 API ====================
 
